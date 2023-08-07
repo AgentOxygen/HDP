@@ -130,4 +130,4 @@ def compute_metrics(temp_ds: xarray.DataArray, control_threshold: xarray.DataArr
     
     
 def metrics_from_path(temp_ds_path: str, temp_var_name: str, control_path: str, control_var_name: str) -> xarray.Dataset:
-    return compute_metrics(xarray.open_dataset(temp_ds_path)[temp_var_name], xarray.open_dataset(control_path[control_var_name]), temp_path=temp_path, control_path=control_path)
+    return compute_metrics(xarray.open_dataset(temp_ds_path)[temp_var_name], xarray.open_dataset(control_path)[control_var_name], temp_path=temp_ds_path, control_path=control_path)
