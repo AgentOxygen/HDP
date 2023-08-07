@@ -61,5 +61,5 @@ def compute_threshold(temperature_data: xarray.DataArray, percentile:float=0.9, 
     )
 
 
-def threshold_from_path(temperature_path: str, percentile: float, percentile_range: int) -> xarray.DataArray:
-    return compute_threshold(xarray.open_dataset(temperature_path), percentile, percentile_range, temp_path=temperature_path)
+def threshold_from_path(temperature_path: str, temperature_variable: str, percentile: float, percentile_range: int) -> xarray.DataArray:
+    return compute_threshold(xarray.open_dataset(temperature_path)[temperature_variable], percentile, percentile_range, temp_path=temperature_path)
