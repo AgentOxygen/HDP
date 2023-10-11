@@ -3,7 +3,7 @@
 heatwave_metrics.py
 
 Cameron Cummins (cameron.cummins@utexas.edu)
-8/4/2023
+10/11/2023
 
 Python functions for computing the heatwave metrics from a temperature dataset.
 
@@ -12,6 +12,7 @@ The algorithm is encapsulated in a Python function with additional documentation
 import xarray
 import numpy as np
 from datetime import datetime
+from scipy import stats
 
 
 def indicate_hot_days(temp_ds: xarray.DataArray, threshold: xarray.DataArray) -> np.ndarray:
@@ -26,7 +27,7 @@ def indicate_hot_days(temp_ds: xarray.DataArray, threshold: xarray.DataArray) ->
     
     for index in range(temp_ds.time.values.size):
         day_number = temp_ds.time.values[index].dayofyr
-        hot_days[index] = (temp_ds.values[index] > threshold.values[day_number-1])*(temp_ds.values[index] >= 273.15)
+        hot_days[index] = (temp_ds.values[index] > threshold.values[day_number-1])#*(temp_ds.values[index] >= 273.15)
 
     return hot_days
 
@@ -92,17 +93,29 @@ def compute_metrics(temp_ds: xarray.DataArray, control_threshold: xarray.DataArr
     south_hemisphere = np.ones((int(temp_ds.shape[1]/2), temp_ds.shape[2]), dtype=int)
     south_hemisphere.resize((temp_ds.shape[1], temp_ds.shape[2]))
     north_hemisphere = 1 - south_hemisphere
-
+    
     hwf = np.zeros((years, indexed_heatwaves.shape[1], indexed_heatwaves.shape[2]), dtype=int)
+    hwd = np.zeros((years, indexed_heatwaves.shape[1], indexed_heatwaves.shape[2]), dtype=int)
     for index in range(0, years):
         north_lower, north_upper = (365*index + 121, 365*index + 274)
         south_lower, south_upper = (365*index + 304, 365*index + 455)
-
+        
         hwf[index] = north_hemisphere*np.sum(num_index_heatwaves[north_lower:north_upper], axis=0) + south_hemisphere*np.sum(num_index_heatwaves[south_lower:south_upper], axis=0)
-
+        
+        north_hw_indices = indexed_heatwaves[north_lower:north_upper]
+        south_hw_indices = indexed_heatwaves[south_lower:south_upper]
+        
+    masked_north = north_hw_indices.astype(np.float16)
+    masked_north[north_hw_indices == 0] = np.nan
+    
+    masked_south = south_hw_indices.astype(np.float16)
+    masked_south[south_hw_indices == 0] = np.nan
+    
+    hwd[index] = north_hemisphere*np.sum((north_hw_indices == stats.mode(masked_north, axis=0, nan_policy="omit")[0].astype(np.short)), axis=0) + south_hemisphere*np.sum((masked_south == stats.mode(south_hw_indices, axis=0, nan_policy="omit")[0].astype(np.short)), axis=0)
+    
     meta = {
-            "temperature dataset path": "none",
-            "control dataset path": "none",
+            "temperature dataset path": temp_path,
+            "control dataset path": control_path,
             "time_created": str(datetime.now()),
             "author": "Cameron Cummins",
             "credit": "Original algorithm written by Tammas Loughran and modified by Jane Baldwin",
@@ -115,15 +128,13 @@ def compute_metrics(temp_ds: xarray.DataArray, control_threshold: xarray.DataArr
 
     return xarray.Dataset(
         data_vars=dict(
-            HD=(["time", "lat", "lon"], hot_days),
-            HWI=(["time", "lat", "lon"], indexed_heatwaves),
-            HWF=(["year", "lat", "lon"], hwf)
+            HWF=(["year", "lat", "lon"], hwf),
+            HWD=(["year", "lat", "lon"], hwd)
         ),
         coords=dict(
             lon=(["lon"], temp_ds.lon.values),
             lat=(["lat"], temp_ds.lat.values),
             year=np.arange(temp_ds.time.values[0].year, temp_ds.time.values[-1].year+1),
-            time=temp_ds.time.values
         ),
         attrs=meta,
         )

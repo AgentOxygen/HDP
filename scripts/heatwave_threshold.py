@@ -10,7 +10,7 @@ import xarray
 import numpy as np
 
 
-def compute_threshold(temperature_data: xarray.DataArray, percentile:float=0.9, temp_path="No path provided.") -> xarray.DataArray:
+def compute_threshold(temperature_data: xarray.DataArray, percentile:float=0.9, num_days=365, temp_path="No path provided.") -> xarray.DataArray:
     """
     Computes day-of-year quantile temperatures for given temperature dataset and percentile. The output is used as the threshold input for 'heatwave_metrics.py'.
     
@@ -24,9 +24,9 @@ def compute_threshold(temperature_data: xarray.DataArray, percentile:float=0.9, 
     init_year = temperature_data.time.values[0].year
     year_range = temperature_data.time.values[-1].year - init_year + 1
     
-    annual_threshold = np.zeros((365, temperature_data.lat.size, temperature_data.lon.size))
+    annual_threshold = np.zeros((num_days, temperature_data.lat.size, temperature_data.lon.size))
     
-    day_of_year = np.zeros((365, year_range), int)
+    day_of_year = np.zeros((num_days, year_range), int)
 
     for index in range(temperature_data.time.values.size):
         date = temperature_data.time.values[index]
@@ -42,7 +42,7 @@ def compute_threshold(temperature_data: xarray.DataArray, percentile:float=0.9, 
             both_parts = [day_of_year[i] for i in range(init_i, day_of_year.shape[0])] + [day_of_year[i] for i in range(0, fin_i)]
             indices = np.array(both_parts).flatten()
         
-        quantiles = np.quantile(np.array([temperature_data.values[i] for i in indices]), percentile, axis=0, method="midpoint")
+        quantiles = np.nanquantile(np.array([temperature_data.values[i] for i in indices]), percentile, axis=0)
         annual_threshold[index] = quantiles
     
     return xarray.Dataset(
@@ -52,7 +52,7 @@ def compute_threshold(temperature_data: xarray.DataArray, percentile:float=0.9, 
         coords=dict(
             lon=(["lon"], temperature_data.lon.values),
             lat=(["lat"], temperature_data.lat.values),
-            day=np.arange(0, 365),
+            day=np.arange(0, num_days),
         ),
         attrs={
             "description":f"{int(percentile*100)}th percentile temperatures.",
@@ -61,5 +61,5 @@ def compute_threshold(temperature_data: xarray.DataArray, percentile:float=0.9, 
     )
 
 
-def threshold_from_path(temperature_path: str, temperature_variable: str, percentile: float, percentile_range: int) -> xarray.DataArray:
-    return compute_threshold(xarray.open_dataset(temperature_path)[temperature_variable], percentile, percentile_range, temp_path=temperature_path)
+def threshold_from_path(temperature_path: str, temperature_variable: str, percentile: float) -> xarray.DataArray:
+    return compute_threshold(xarray.open_dataset(temperature_path)[temperature_variable], percentile, temp_path=temperature_path)
