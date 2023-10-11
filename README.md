@@ -24,12 +24,19 @@ The schematic above shows how a comparable gridded daily minimum temperature tim
 To determine which hot days constitute a heatwave (and are thus heatwave days), an algorithm is used to iterate over the hot day timeseries and systematically identify heatwaves based on a heatwave definition. The heatwave definition is comprised of two variables that refer to consecutive hot days as "events" of a heatwave: the minimum number of hot days in the first event and the maximum number of non-hot days between the first and second event. This definition allows the conditional second event to be shorter than the first event (as short as one hot day), but only allows for a maxmimum of two events per heatwave. For this example, we assume a heatwave definition of at least 3 hot days in the first event followed by no more than a 1 day break. The case examples are provided with explanations below:
 
 > A - No heatwave. The first event is only two hot days long.
+> 
 > B - No heatwave. The third hot day is not considered as part of the first event because there is a break and thus the first event is only two hot days long.
+> 
 > C - No heatwave. The last two hot days are not considered as part of the first event because there is a break and thus the first event is only two hot days long.
+> 
 > D - Heatwave. The first event is three days long and there is no second event (the second event is conditional).
+> 
 > E - Heatwave. The first event is three days long and the second event is separated by only one day.
+> 
 > F - Heatwave. The first event is three days long and the second event is two days long, separated by only one day break.
+> 
 > G - Heatwave. The first event is four days long and there is no second event.
+> 
 > H* - Partial Heatwave. The first event is three days long and the second event is one day long, separated by only one day break. The last hot day would constitute a theoretical "third" event due to the break between the second event, but our definition does not allow for more than two events per heatwave.
 
 Heatwave days can then be identified by applying this definition to the hot days boolean dataset, replacing hot days that do not constitute part of a heatwave with zeros. Note that the number of heatwave days can only be equal to or less than the number of hot days.
