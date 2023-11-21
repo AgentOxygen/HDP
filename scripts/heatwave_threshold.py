@@ -10,6 +10,7 @@ import xarray
 import numpy as np
 
 
+############################## function that needs to be optimized ##################################
 def compute_threshold(temperature_data: xarray.DataArray, percentile:float=0.9, num_days=365, temp_path="No path provided.") -> xarray.DataArray:
     """
     Computes day-of-year quantile temperatures for given temperature dataset and percentile. The output is used as the threshold input for 'heatwave_metrics.py'.
@@ -59,7 +60,7 @@ def compute_threshold(temperature_data: xarray.DataArray, percentile:float=0.9, 
             "temperature dataset path": temp_path
         },
     )
-
+###################################################################################################
 
 def threshold_from_path(temperature_path: str, temperature_variable: str, percentile: float) -> xarray.DataArray:
     return compute_threshold(xarray.open_dataset(temperature_path)[temperature_variable], percentile, temp_path=temperature_path)
