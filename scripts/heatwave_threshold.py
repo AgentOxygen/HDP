@@ -68,9 +68,9 @@ def gen_windowed_samples(temperature_dataset: xarray.DataArray, window_radius: i
     
 
 @jit(nopython=True)
-def compute_percentile_thresholds(temp_data: np.ndarray, window_samples: np.ndarray, percentile: float):
+def compute_percentile_thresholds(temp_data, window_samples, percentiles):
     # Assuming order of (time, lat, lon)
-    percentile_temp = np.zeros((window_samples.shape[0], temp_data.shape[1], temp_data.shape[2]), np.float32)
+    percentile_temp = np.zeros((percentiles.shape[0], window_samples.shape[0], temp_data.shape[1], temp_data.shape[2]), np.float32)
 
     for doy_index in range(window_samples.shape[0]):
         # this stores the index of each time slice for this sample
@@ -100,7 +100,8 @@ def compute_percentile_thresholds(temp_data: np.ndarray, window_samples: np.ndar
         #percentile_temp[doy_index] = np.quantile(temp_sample, percentile, axis=0)
         for i in range(temp_sample.shape[1]):
             for j in range(temp_sample.shape[2]):
-                percentile_temp[doy_index, i, j] = np.quantile(temp_sample[:, i, j], percentile)
+                percentile_temp[:, doy_index, i, j] = np.quantile(temp_sample[:, i, j], percentiles)
+        
         
     return percentile_temp
 
