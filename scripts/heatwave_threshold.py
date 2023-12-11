@@ -106,7 +106,7 @@ def compute_percentile_thresholds(temp_data, window_samples, percentiles):
     return percentile_temp
 
 
-def compute_threshold(temperature_dataset: xarray.DataArray, percentile: float, temp_path: str="No path provided.") -> xarray.DataArray:
+def compute_threshold(temperature_dataset: xarray.DataArray, percentiles: np.ndarray, temp_path: str="No path provided.") -> xarray.DataArray:
     """
     Computes day-of-year quantile temperatures for given temperature dataset and percentile. The output is used as the threshold input for 'heatwave_metrics.py'.
     
@@ -117,19 +117,21 @@ def compute_threshold(temperature_dataset: xarray.DataArray, percentile: float, 
     """
     
     window_samples = gen_windowed_samples(temperature_dataset, 7)
-    annual_threshold = compute_percentile_thresholds(temperature_dataset.values, window_samples, percentile)
+    annual_threshold = compute_percentile_thresholds(temperature_dataset.values, window_samples, percentiles)
     
     return xarray.Dataset(
         data_vars=dict(
-            threshold=(["day", "lat", "lon"], annual_threshold),
+            threshold=(["percentile", "day", "lat", "lon"], annual_threshold),
         ),
         coords=dict(
             lon=(["lon"], temperature_dataset.lon.values),
             lat=(["lat"], temperature_dataset.lat.values),
             day=np.arange(0, num_days),
+            percentile=percentiles
         ),
         attrs={
-            "description":f"{int(percentile*100)}th percentile temperatures.",
+            "description": f"Percentile temperatures.",
+            "percentiles": str(percentile),
             "temperature dataset path": temp_path
         },
     )
