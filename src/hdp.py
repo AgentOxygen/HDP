@@ -1,18 +1,113 @@
 #!/usr/bin/env python
 """
-heatwave_metrics.py
+hdp.py
 
-Cameron Cummins (cameron.cummins@utexas.edu)
-10/11/2023
+Heatwave Diagnostics Package
 
-Python functions for computing the heatwave metrics from a temperature dataset.
-
-The algorithm is encapsulated in a Python function with additional documentation on its use in other scripts and how the metrics are computed. There is an additional wrapper function "metrics_from_path()" to handle string inputs. This allows the user to develop an xarray solution using the primary function "compute_metrics()"
+Contains all functions necessary for computing heatwave thresholds and metrics using numpy with xarray wrapper functions.
 """
 import xarray
 import numpy as np
+from numba import jit
 from datetime import datetime
 from scipy import stats
+
+
+def datetimes_to_windows(datetimes: np.ndarray, window_radius: int=7) -> np.ndarray:
+    """
+    Calculates sample windows for array indices from the datetime dimension 
+    
+    datetimes - array of datetime objects corresponding to the dataset's time dimension
+    window_radius - radius of windows to generate
+    """
+    day_of_yr_to_index = {}
+    for index, date in enumerate(datetimes):
+        if date.dayofyr in day_of_yr_to_index.keys(): 
+            day_of_yr_to_index[date.dayofyr].append(index)
+        else:
+            day_of_yr_to_index[date.dayofyr] = [index]
+    
+    time_index = np.zeros((len(day_of_yr_to_index), np.max([len(x) for x in day_of_yr_to_index.values()])), int) - 1
+    
+    for index, day_of_yr in enumerate(day_of_yr_to_index):
+        for i in range(len(day_of_yr_to_index[day_of_yr])):
+            time_index[index, i] = day_of_yr_to_index[day_of_yr][i]
+            
+    window_samples = np.zeros((len(day_of_yr_to_index), 2*window_radius+1, time_index.shape[1]), int)
+    
+    for day_of_yr in range(window_samples.shape[0]):
+        for window_index in range(window_samples.shape[1]):
+            sample_index = day_of_yr + window_radius - window_index            
+            if sample_index >= time_index.shape[0]:
+                sample_index = time_index.shape[0] - sample_index
+            window_samples[day_of_yr, window_index] = time_index[sample_index]
+    
+    return window_samples.reshape((window_samples.shape[0], window_samples.shape[1]*window_samples.shape[2]))
+    
+
+@jit(nopython=True)
+def compute_percentiles(temp_data, window_samples, percentiles):
+    """
+    Computes the temperatures for multiple percentiles using sample index windows.
+    
+    temp_data - dataset containing temperatures to compute percentiles from
+    window_samples - array containing "windows" of indices cenetered at each day of the year
+    percentiles - array of perecentiles to compute [0, 1]
+    """
+    percentile_temp = np.zeros((percentiles.shape[0], window_samples.shape[0], temp_data.shape[1], temp_data.shape[2]), np.float32)
+
+    for doy_index in range(window_samples.shape[0]):
+        sample_time_indices = window_samples[doy_index]
+        
+        time_index_size = 0
+        for sample_time_index in range(sample_time_indices.shape[0]):
+            if sample_time_indices[sample_time_index] != -1:
+                time_index_size += 1
+
+        temp_sample = np.zeros((time_index_size, temp_data.shape[1], temp_data.shape[2]), np.float32)
+
+        time_index = 0
+        for sample_time_index in range(sample_time_indices.shape[0]):
+            if sample_time_indices[sample_time_index] != -1:
+                temp_sample[time_index] = temp_data[sample_time_indices[sample_time_index]]
+                time_index += 1
+
+        for i in range(temp_sample.shape[1]):
+            for j in range(temp_sample.shape[2]):
+                percentile_temp[:, doy_index, i, j] = np.quantile(temp_sample[:, i, j], percentiles)
+        
+    return percentile_temp
+
+
+def compute_threshold(temperature_dataset: xarray.DataArray, percentiles: np.ndarray, temp_path: str="No path provided.") -> xarray.DataArray:
+    """
+    Computes day-of-year quantile temperatures for given temperature dataset and percentile. The output is used as the threshold input for 'heatwave_metrics.py'.
+    
+    Keyword arguments:
+    temperature_data -- Temperature dataset to compute quantiles from
+    percentile -- Percentile to compute the quantile temperatures at
+    temp_path -- Path to 'temperature_data' temperature dataset to add to meta-data
+    """
+    
+    window_samples = gen_windowed_samples(temperature_dataset, 7)
+    annual_threshold = compute_percentile_thresholds(temperature_dataset.values, window_samples, percentiles)
+    
+    return xarray.Dataset(
+        data_vars=dict(
+            threshold=(["percentile", "day", "lat", "lon"], annual_threshold),
+        ),
+        coords=dict(
+            lon=(["lon"], temperature_dataset.lon.values),
+            lat=(["lat"], temperature_dataset.lat.values),
+            day=np.arange(0, num_days),
+            percentile=percentiles
+        ),
+        attrs={
+            "description": f"Percentile temperatures.",
+            "percentiles": str(percentile),
+            "temperature dataset path": temp_path
+        },
+    )
 
 
 def indicate_hot_days(temp_ds: xarray.DataArray, threshold: xarray.DataArray) -> np.ndarray:
@@ -27,7 +122,7 @@ def indicate_hot_days(temp_ds: xarray.DataArray, threshold: xarray.DataArray) ->
     
     for index in range(temp_ds.time.values.size):
         day_number = temp_ds.time.values[index].dayofyr
-        hot_days[index] = (temp_ds.values[index] > threshold.values[day_number-1])#*(temp_ds.values[index] >= 273.15)
+        hot_days[index] = (temp_ds.values[index] > threshold.values[day_number-1])
 
     return hot_days
 
@@ -138,7 +233,4 @@ def compute_metrics(temp_ds: xarray.DataArray, control_threshold: xarray.DataArr
         ),
         attrs=meta,
         )
-    
-    
-def metrics_from_path(temp_ds_path: str, temp_var_name: str, control_path: str, control_var_name: str) -> xarray.Dataset:
-    return compute_metrics(xarray.open_dataset(temp_ds_path)[temp_var_name], xarray.open_dataset(control_path)[control_var_name], temp_path=temp_ds_path, control_path=control_path)
+
