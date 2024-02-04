@@ -1,19 +1,13 @@
-#!/usr/bin/env python
-"""
-heatwave_thresholds.py
-
-Python functions for computing the daily temperature threshold that defines an extreme heat day and may constitute a portion of a heatwave.
-
-The algorithm is encapsulated in a Python function with additional documentation on its use in other scripts and how the threshold is computed. There is an additional wrapper function "threshold_from_path()" to handle string inputs. This allows the user to develop an xarray solution using the primary function "compute_threshold()"
-"""
 import xarray
 import numpy as np
+from scipy.optimize import curve_fit
+import scipy.stats as stats
+import matplotlib.pyplot as plt
+from scipy.interpolate import interp1d
 from numba import jit
+from time import time
 
-
-############################## functions that needs to be optimized ##################################
-
-def gen_windowed_samples(temperature_dataset: xarray.DataArray, window_radius: int=7) -> np.ndarray:
+def gen_windowed_samples(temperature_dataset, window_radius):
     #### Create time index mapping
     doy_indices = {}
     for index, date in enumerate(temperature_dataset.time.values):
@@ -66,6 +60,7 @@ def gen_windowed_samples(temperature_dataset: xarray.DataArray, window_radius: i
     return window_samples
     ### Done creating window samples
     
+### Percentile calculation, everything should be kept in numpy
 
 @jit(nopython=True)
 def compute_percentile_thresholds(temp_data, window_samples, percentiles):
@@ -106,32 +101,17 @@ def compute_percentile_thresholds(temp_data, window_samples, percentiles):
     return percentile_temp
 
 
-def compute_threshold(temperature_dataset: xarray.DataArray, percentiles: np.ndarray, temp_path: str="No path provided.") -> xarray.DataArray:
-    """
-    Computes day-of-year quantile temperatures for given temperature dataset and percentile. The output is used as the threshold input for 'heatwave_metrics.py'.
+if __name__ == "__main__":
+    path = "/projects/dgs/persad_research/EDF_MMS_Data/LENS2/TREFHTMN/DAILY/CONCAT_2015_2100/b.e21.BHISTcmip6.f09_g17.LE2-1001.001.cam.h1.TREFHTMN.20150101-20241231.nc"
+    temperature_dataset = xarray.open_dataset(path)["TREFHTMN"]
+    temperature_dataset = temperature_dataset.sel(time=slice(temperature_dataset.time[0], temperature_dataset.time[365*5]))
+
+    percs = np.arange(0.9, 1, 0.01)
     
-    Keyword arguments:
-    temperature_data -- Temperature dataset to compute quantiles from
-    percentile -- Percentile to compute the quantile temperatures at
-    temp_path -- Path to 'temperature_data' temperature dataset to add to meta-data
-    """
-    
-    window_samples = gen_windowed_samples(temperature_dataset, 7)
-    annual_threshold = compute_percentile_thresholds(temperature_dataset.values, window_samples, percentiles)
-    
-    return xarray.Dataset(
-        data_vars=dict(
-            threshold=(["percentile", "day", "lat", "lon"], annual_threshold),
-        ),
-        coords=dict(
-            lon=(["lon"], temperature_dataset.lon.values),
-            lat=(["lat"], temperature_dataset.lat.values),
-            day=np.arange(0, num_days),
-            percentile=percentiles
-        ),
-        attrs={
-            "description": f"Percentile temperatures.",
-            "percentiles": str(percentile),
-            "temperature dataset path": temp_path
-        },
-    )
+    for i in range(5):
+        start = time()
+        window_samples = gen_windowed_samples(temperature_dataset, 7)
+        thresholds = compute_percentile_thresholds(temperature_dataset.values, window_samples, percs)
+        duration = time() - start
+        print(duration, end=", ")
+    print("")

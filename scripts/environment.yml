@@ -2,4 +2,3 @@ name: heatwaves
 dependencies:
   - numpy
   - xarray
-  - scipy
