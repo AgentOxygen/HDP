@@ -12,14 +12,22 @@ Contact: cameron.cummins@utexas.edu
 """
 import xarray
 import numpy as np
-from numba import jit
 from datetime import datetime
 from scipy import stats
+from heat_core import HeatCore
+from heat_stats import HeatStats
+
+
+def build_doy_map(temperatures: xarray.DataArray, threshold: xarray.DataArray):
+    doy_map = np.zeros(temperatures.shape[0], dtype=int) - 1
+    for time_index, time in enumerate(temperatures.time.values):
+        doy_map[time_index] = time.dayofyr - 1
+    return doy_map
 
 
 def compute_threshold(temperature_dataset: xarray.DataArray, percentiles: np.ndarray, temp_path: str="No path provided.") -> xarray.DataArray:
     """
-    Computes day-of-year quantile temperatures for given temperature dataset and percentile. The output is used as the threshold input for 'heatwave_metrics.py'.
+    Computes day-of-year quantile temperatures for given temperature dataset and percentile.
     
     Keyword arguments:
     temperature_data -- Temperature dataset to compute quantiles from
@@ -27,8 +35,8 @@ def compute_threshold(temperature_dataset: xarray.DataArray, percentiles: np.nda
     temp_path -- Path to 'temperature_data' temperature dataset to add to meta-data
     """
     
-    window_samples = datetimes_to_windows(temperature_dataset.time.values, 7)
-    annual_threshold = compute_percentile_thresholds(temperature_dataset.values, window_samples, percentiles)
+    window_samples = HeatCore.datetimes_to_windows(temperature_dataset.time.values, 7)
+    annual_threshold = HeatCore.compute_percentiles(temperature_dataset.values, window_samples, percentiles)
     
     return xarray.Dataset(
         data_vars=dict(
@@ -37,12 +45,12 @@ def compute_threshold(temperature_dataset: xarray.DataArray, percentiles: np.nda
         coords=dict(
             lon=(["lon"], temperature_dataset.lon.values),
             lat=(["lat"], temperature_dataset.lat.values),
-            day=np.arange(0, num_days),
+            day=np.arange(0, window_samples.shape[0]),
             percentile=percentiles
         ),
         attrs={
             "description": f"Percentile temperatures.",
-            "percentiles": str(percentile),
+            "percentiles": str(percentiles),
             "temperature dataset path": temp_path
         },
     )
@@ -57,12 +65,12 @@ def compute_metrics(temp_ds: xarray.DataArray, control_threshold: xarray.DataArr
     temp_path -- Path to 'temp_ds' temperature dataset to add to meta-data
     control_path -- Path to 'control_threshold' threshold temperature dataset to add to meta-data
     """
-    hot_days = indicate_hot_days(temp_ds, control_threshold)
+    hot_days = HeatCore.indicate_hot_days(temp_ds, control_threshold)
     indexed_heatwaves = np.zeros(hot_days.shape, dtype=np.short)
 
     for i in range(hot_days.shape[1]):
         for j in range(hot_days.shape[2]):
-            indexed_heatwaves[:, i, j] = index_heatwaves(hot_days[:, i, j])
+            indexed_heatwaves[:, i, j] = HeatCore.index_heatwaves(hot_days[:, i, j])
 
     num_index_heatwaves = indexed_heatwaves > 0
     years = temp_ds.time.values[-1].year - temp_ds.time.values[0].year + 1
@@ -77,7 +85,7 @@ def compute_metrics(temp_ds: xarray.DataArray, control_threshold: xarray.DataArr
         north_lower, north_upper = (365*index + 121, 365*index + 274)
         south_lower, south_upper = (365*index + 304, 365*index + 455)
         
-        hwf[index] = north_hemisphere*np.sum(num_index_heatwaves[north_lower:north_upper], axis=0) + south_hemisphere*np.sum(num_index_heatwaves[south_lower:south_upper], axis=0)
+        hwf[index] = north_hemisphere*HeatStats.heatwave_frequency(num_index_heatwaves[north_lower:north_upper]) + south_hemisphere*HeatStats.heatwave_frequency(num_index_heatwaves[south_lower:south_upper])
         
         north_hw_indices = indexed_heatwaves[north_lower:north_upper]
         south_hw_indices = indexed_heatwaves[south_lower:south_upper]
