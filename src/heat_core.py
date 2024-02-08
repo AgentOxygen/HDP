@@ -19,13 +19,14 @@ import numpy as np
 class HeatCore:
     @staticmethod
     @njit(parallel=True)
-    def spatial_looper(hw_array, func):
-        results = np.zeros(hw_array.shape[:-1], dtype=type(func(np.array([0]))))
-        for i in prange(hw_array.shape[0]):
-            for j in prange(hw_array.shape[1]):
-                results[i, j] = func(hw_array[i, j])
+    def compute_int64_spatial_func(ts_spatial_array, func):
+        results = np.zeros(ts_spatial_array.shape, nb.int64)
+
+        for i in prange(ts_spatial_array.shape[1]):
+            for j in prange(ts_spatial_array.shape[2]):
+                results[:, i, j] = func(ts_spatial_array[:, i, j])
         return results
-    
+
     
     @staticmethod
     @njit(parallel=True)
@@ -36,56 +37,6 @@ class HeatCore:
             if doy_map[time_index] >= 0:
                 hot_days[time_index] = temperatures[time_index] > threshold[doy_map[time_index]]
         return hot_days
-    
-    
-    @staticmethod
-    @njit(parallel=True)
-    def index_heatwaves(hot_days, max_break: int=1, min_duration: int=3) -> np.ndarray:
-        """
-        Identifies the heatwaves in the timeseries using the specified heatwave definition
-
-        Keyword arguments:
-        timeseries -- integer array of ones and zeros where ones indicates a hot day (numpy.ndarray)
-        max_break -- the maximum number of days between hot days within one heatwave event (default 1)
-        min_duration -- the minimum number of hot days to constitute a heatwave event, including after breaks (default 3)
-        """
-        indexed_heatwaves = np.zeros(hot_days.shape, dtype=nb.int64)
-        for p_index in prange(hot_days.shape[0]):
-            for i in prange(hot_days.shape[2]):
-                for j in prange(hot_days.shape[3]):                    
-                    timeseries = np.zeros(hot_days[p_index, :, i, j].shape[0] + 2, dtype=nb.int64)
-                    timeseries[1:timeseries.shape[0] - 1] = hot_days[p_index, :, i, j]
-                    
-                    timeseries_diff = np.zeros(timeseries.shape[0]-1, dtype=nb.int64)
-                    for index in range(timeseries_diff.shape[0]):
-                        timeseries_diff[index] = timeseries[index+1] - x[index]
-                    
-                    diff_indices = np.where(timeseries_diff != 0)[0] + 1
-
-                    in_heatwave = False
-                    current_hw_index = 1
-
-                    hw_indices = np.zeros(timeseries.shape, dtype=nb.int64)
-
-                    broken = False
-                    for i in range(diff_indices.shape[0]-1):
-                        index = diff_indices[i]
-                        next_index = diff_indices[i+1]
-
-                        if timeseries[index] == True and in_heatwave:
-                            hw_indices[index:next_index] = current_hw_index
-                        elif timeseries[index] == False and in_heatwave and next_index-index <= max_break and not broken:
-                            hw_indices[index:next_index] = current_hw_index
-                            broken = True
-                        elif timeseries[index] == True and not in_heatwave and next_index-index >= min_duration:
-                            in_heatwave = True
-                            hw_indices[index:next_index] = current_hw_index
-                        elif in_heatwave:
-                            current_hw_index += 1
-                            in_heatwave = False
-                            broken = False
-                    indexed_heatwaves[p_index, :, i, j] = timeseries[1:-1]*hw_indices[1:-1]
-        return indexed_heatwaves
     
     
     @staticmethod
