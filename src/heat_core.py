@@ -29,6 +29,17 @@ class HeatCore:
     
     @staticmethod
     @njit(parallel=True)
+    def indicate_hot_days(temperatures: np.ndarray, threshold: np.ndarray, doy_map: np.ndarray) -> np.ndarray:
+        hot_days = np.zeros(temperatures.shape, dtype=nb.boolean)
+
+        for time_index in prange(temperatures.shape[0]):
+            if doy_map[time_index] >= 0:
+                hot_days[time_index] = temperatures[time_index] > threshold[doy_map[time_index]]
+        return hot_days
+    
+    
+    @staticmethod
+    @njit(parallel=True)
     def index_heatwaves(hot_days, max_break: int=1, min_duration: int=3) -> np.ndarray:
         """
         Identifies the heatwaves in the timeseries using the specified heatwave definition
@@ -75,23 +86,6 @@ class HeatCore:
                             broken = False
                     indexed_heatwaves[p_index, :, i, j] = timeseries[1:-1]*hw_indices[1:-1]
         return indexed_heatwaves
-    
-    
-    @staticmethod
-    def indicate_hot_days(temp_ds: xarray.DataArray, threshold: xarray.DataArray) -> np.ndarray:
-        """
-        Marks days in the temperature input that exceed the daily thresholds.
-
-        Keyword arguments:
-        temp_ds -- temperature dataset to use as input (xarray.DataArray)
-        threshold -- threshold dataset to compare the input against (xarray.DataArray)
-        """
-        hot_days = np.zeros((threshold.shape[0],) + temp_ds.values.shape, dtype=int)
-
-        for index in range(temp_ds.time.values.size):
-            day_number = temp_ds.time.values[index].dayofyr
-            hot_days[:, index] = (temp_ds.values[index] > threshold.values[:, day_number-1])
-        return hot_days
     
     
     @staticmethod
