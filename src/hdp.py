@@ -18,6 +18,21 @@ from heat_core import HeatCore
 from heat_stats import HeatStats
 
 
+def compute_hemisphere_seasonal_ranges(temperatures):
+    north_ranges = (121, 274)
+    south_ranges = (304, 455)
+    
+    ranges = np.zeros((2, temperatures.shape[1], temperatures.shape[2]))
+    
+    for i in range(ranges.shape[1]):
+        for j in range(ranges.shape[2]):
+            if i < ranges.shape[1] / 2:
+                ranges[:, i, j] = south_ranges
+            else:
+                ranges[:, i, j] = north_ranges
+    return ranges
+
+
 def build_doy_map(temperatures: xarray.DataArray, threshold: xarray.DataArray):
     doy_map = np.zeros(temperatures.shape[0], dtype=int) - 1
     for time_index, time in enumerate(temperatures.time.values):
