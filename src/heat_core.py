@@ -17,46 +17,6 @@ import numpy as np
 
 
 class HeatCore:
-    @staticmethod
-    def get_range_indices(times: np.array, start: tuple, end: tuple):
-        num_years = times[-1].year - times[0].year + 1
-        ranges = np.zeros((num_years, 2), dtype=int) - 1
-
-        n = 0
-        looking_for_start = True
-        for t in range(times.shape[0]):
-            if looking_for_start:
-                if times[t].month == start[0] and times[t].day == start[1]:
-                    looking_for_start = False
-                    ranges[n, 0] = t
-            else:
-                if times[t].month == end[0] and times[t].day == end[1]:
-                    looking_for_start = True
-                    ranges[n, 1] = t
-                    n += 1
-
-        if not looking_for_start:
-            ranges[-1, -1] = times.shape[0]
-
-        return ranges
-
-    
-    @staticmethod
-    def compute_hemisphere_ranges(temperatures: xarray.DataArray):
-        north_ranges = get_range_indices(temperatures.time.values, (5, 1), (10, 1))
-        south_ranges = get_range_indices(temperatures.time.values, (10, 1), (3, 1))
-
-        ranges = np.zeros((north_ranges.shape[0], 2, temperatures.shape[1], temperatures.shape[2]), dtype=int) - 1
-
-        for i in range(temperatures.shape[1]):
-            for j in range(temperatures.shape[2]):
-                if i < ranges.shape[2] / 2:
-                    ranges[:, :, i, j] = south_ranges
-                else:
-                    ranges[:, :, i, j] = north_ranges
-
-        return ranges
-    
     
     @staticmethod
     @njit(parallel=True)
