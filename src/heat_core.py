@@ -17,6 +17,19 @@ import numpy as np
 
 
 class HeatCore:
+    @staticmethod
+    @njit(parallel=True)
+    def compute_heatwave_metric(heat_stat_func, season_ranges: np.array, heatwave_indices: np.array):
+        metric = np.zeros((season_ranges.shape[0], season_ranges.shape[2], season_ranges.shape[3]))
+        for y in prange(metric.shape[0]):
+            for i in prange(metric.shape[1]):
+                for j in prange(metric.shape[2]):
+                    start = season_ranges[y, 0, i, j]
+                    end = season_ranges[y, 1, i, j]
+                    metric[y, i, j] = heat_stat_func(heatwave_indices[start:end, i, j])
+
+        return metric
+    
     
     @staticmethod
     @njit(parallel=True)
