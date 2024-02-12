@@ -163,3 +163,35 @@ def compute_metrics(temp_ds: xarray.DataArray, control_threshold: xarray.DataArr
         attrs=meta,
         )
 
+
+def compute_heatwave_metrics(future_dataset, threshold):
+    datasets = []
+    for perc in threshold.percentile.values:
+        print(perc, end=", ")
+        doy_map = hdp.build_doy_map(future_dataset, threshold["threshold"])
+        hot_days = HeatCore.indicate_hot_days(future_dataset.values, threshold["threshold"].sel(percentile=perc).values, doy_map)
+        heatwave_indices = HeatCore.compute_int64_spatial_func(hot_days, HeatStats.index_heatwaves)
+        season_ranges = hdp.compute_hemisphere_ranges(future_dataset)
+
+        metrics_ds = xarray.Dataset(data_vars={
+                "HWF": (["year", "lat", "lon"], HeatCore.compute_heatwave_metric(HeatStats.heatwave_frequency, season_ranges, heatwave_indices)),
+                "HWD": (["year", "lat", "lon"], HeatCore.compute_heatwave_metric(HeatStats.heatwave_duration, season_ranges, heatwave_indices))
+            },
+            coords=dict(
+                year=np.arange(future_dataset.time.values[0].year, future_dataset.time.values[-1].year + 1),
+                lat=future_dataset.lat.values,
+                lon=future_dataset.lon.values,
+                percentile=perc
+            ))
+        datasets.append(metrics_ds)
+
+    dataset = xarray.concat(datasets, dim="percentile")
+    dataset.attrs = {
+        "dev_name" : "Cameron Cummins",
+        "dev_affiliation" : "Persad Aero-Climate Lab, Department of Earth and Planetary Sciences, The University of Texas at Austin",
+        "dev_email" : "cameron.cummins@utexas.edu",
+        "description": "Heatwave metrics.",
+        "date_prepared" : str(datetime.now())
+    }
+
+    return dataset
