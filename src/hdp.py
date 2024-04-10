@@ -13,9 +13,8 @@ Contact: cameron.cummins@utexas.edu
 import xarray
 import numpy as np
 from datetime import datetime
-from scipy import stats
-from heat_core import HeatCore
-from heat_stats import HeatStats
+import heat_core
+import heat_stats
 
 
 def get_range_indices(times: np.array, start: tuple, end: tuple):
@@ -74,8 +73,8 @@ def compute_threshold(temperature_dataset: xarray.DataArray, percentiles: np.nda
     temp_path -- Path to 'temperature_data' temperature dataset to add to meta-data
     """
     
-    window_samples = HeatCore.datetimes_to_windows(temperature_dataset.time.values, 7)
-    annual_threshold = HeatCore.compute_percentiles(temperature_dataset.values, window_samples, percentiles)
+    window_samples = heat_core.datetimes_to_windows(temperature_dataset.time.values, 7)
+    annual_threshold = heat_core.compute_percentiles(temperature_dataset.values, window_samples, percentiles)
     
     return xarray.Dataset(
         data_vars=dict(
@@ -98,15 +97,14 @@ def compute_threshold(temperature_dataset: xarray.DataArray, percentiles: np.nda
 def compute_heatwave_metrics(future_dataset: xarray.DataArray, threshold: xarray.DataArray):
     datasets = []
     for perc in threshold.percentile.values:
-        print(perc, end=", ")
         doy_map = build_doy_map(future_dataset, threshold["threshold"])
-        hot_days = HeatCore.indicate_hot_days(future_dataset.values, threshold["threshold"].sel(percentile=perc).values, doy_map)
-        heatwave_indices = HeatCore.compute_int64_spatial_func(hot_days, HeatStats.index_heatwaves)
+        hot_days = heat_core.indicate_hot_days(future_dataset.values, threshold["threshold"].sel(percentile=perc).values, doy_map)
+        heatwave_indices = heat_core.compute_int64_spatial_func(hot_days, heat_stats.index_heatwaves)
         season_ranges = compute_hemisphere_ranges(future_dataset)
 
         metrics_ds = xarray.Dataset(data_vars={
-                "HWF": (["year", "lat", "lon"], HeatCore.compute_heatwave_metric(HeatStats.heatwave_frequency, season_ranges, heatwave_indices)),
-                "HWD": (["year", "lat", "lon"], HeatCore.compute_heatwave_metric(HeatStats.heatwave_duration, season_ranges, heatwave_indices))
+                "HWF": (["year", "lat", "lon"], heat_core.compute_heatwave_metric(heat_stats.heatwave_frequency, season_ranges, heatwave_indices)),
+                "HWD": (["year", "lat", "lon"], heat_core.compute_heatwave_metric(heat_stats.heatwave_duration, season_ranges, heatwave_indices))
             },
             coords=dict(
                 year=np.arange(future_dataset.time.values[0].year, future_dataset.time.values[-1].year + 1),

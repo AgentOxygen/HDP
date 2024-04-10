@@ -54,17 +54,15 @@ class HeatStats:
                 in_heatwave = False
                 broken = False
         return timeseries[1:-1]*hw_indices[1:-1]
-    
-    
+
     @staticmethod
     @njit
-    def heatwave_frequency(hw_ts: np.array)->int:
+    def heatwave_frequency(hw_ts: np.array) -> int:
         return np.sum(hw_ts > 0)
-    
-    
+
     @staticmethod
     @njit
-    def heatwave_duration(hw_ts: np.array)->int:
+    def heatwave_duration(hw_ts: np.array) -> int:
         hwd = 0
         for value in np.unique(hw_ts):
             index_count = 0
