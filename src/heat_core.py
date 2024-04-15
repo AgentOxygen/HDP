@@ -40,13 +40,31 @@ def compute_int64_spatial_func(ts_spatial_array, func):
 
 
 @njit(parallel=True)
-def indicate_hot_days(temperatures: np.ndarray, threshold: np.ndarray, doy_map: np.ndarray) -> np.ndarray:
+def indicate_hot_days_nb(temperatures: np.ndarray, threshold: np.ndarray, doy_map: np.ndarray) -> np.ndarray:
     hot_days = np.zeros(temperatures.shape, dtype=nb.boolean)
 
     for time_index in prange(temperatures.shape[0]):
         if doy_map[time_index] >= 0:
             hot_days[time_index] = temperatures[time_index] > threshold[doy_map[time_index]]
     return hot_days
+
+
+@nb.guvectorize(
+    [(nb.float64[:],
+      nb.float64[:, :],
+      nb.int64[:],
+      nb.boolean[:, :])],
+    '(t), (d, p), (t) -> (t, p)'
+)
+def indicate_hot_days(temperatures: np.ndarray, threshold: np.ndarray, doy_map: np.ndarray, output: np.ndarray):
+    for t in range(temperatures.size):
+        doy = doy_map[t]
+        for p in range(threshold[doy].size):
+            if temperatures[t] > threshold[doy, p]:
+                output[t, p] = True
+            else:
+                output[t, p] = False
+
 
 
 def datetimes_to_windows(datetimes: np.ndarray, window_radius: int=7) -> np.ndarray:
@@ -81,9 +99,10 @@ def datetimes_to_windows(datetimes: np.ndarray, window_radius: int=7) -> np.ndar
 
 
 @njit(parallel=True)
-def compute_percentiles(temp_data, window_samples, percentiles):
+def compute_percentiles_nb(temp_data, window_samples, percentiles):
     """
     Computes the temperatures for multiple percentiles using sample index windows.
+    Numba parallel version. Works well on multi-core systems that don't use Dask.
 
     temp_data - dataset containing temperatures to compute percentiles from
     window_samples - array containing "windows" of indices cenetered at each day of the year
@@ -113,20 +132,24 @@ def compute_percentiles(temp_data, window_samples, percentiles):
     return percentile_temp
 
 
-@guvectorize(
-    [(float32[:, :, :], int64[:, :], float32[:], float32[:, :, :, :])],
-    '(n, i, j), (w, v), (m) -> (m, w, i, j)',
-    nopython=True
+@nb.guvectorize(
+    [(nb.float32[:],
+      nb.int64[:, :],
+      nb.float64[:],
+      nb.float64[:, :])],
+    '(t), (d, b), (p) -> (d, p)'
 )
-def gufunc_compute_percentiles(temp_data, window_samples, percentiles, perc_vals):
-    perc_vals[:, :, :, :] = compute_percentiles(temp_data, window_samples, percentiles)
+def compute_percentiles(temperatures, window_samples, percentiles, output):
+    """
+    Generalized universal function that computes the temperatures for
+    multiple percentiles using sample index windows.
 
-
-@guvectorize(
-    [(float32[:, :, :], float32[:, :, :, :], int64[:], boolean[:, :, :, :])],
-    '(t, i, j), (m, d, i, j), (t) -> (m, t, i, j)',
-    nopython=True
-)
-def gufunc_indicate_hot_days(temperatures, thresholds, doy_map, hot_days):
-    for p in range(thresholds.shape[0]):
-        hot_days[p, :, :, :] = indicate_hot_days(temperatures, thresholds[p], doy_map)
+    temperatures - dataset containing temperatures to compute percentiles from
+    window_samples - array containing "windows" of indices cenetered at each day of the year
+    percentiles - array of perecentiles to compute [0, 1]
+    """
+    for doy_index in range(window_samples.shape[0]):
+        doy_temps = np.zeros(window_samples[doy_index].size)
+        for index, temperature_index in enumerate(window_samples[doy_index]):
+            doy_temps[index] = temperatures[temperature_index]
+        output[doy_index] = np.quantile(doy_temps, percentiles)

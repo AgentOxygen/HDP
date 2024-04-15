@@ -44,10 +44,10 @@ def compute_hemisphere_ranges(temperatures: xarray.DataArray):
     north_ranges = get_range_indices(temperatures.time.values, (5, 1), (10, 1))
     south_ranges = get_range_indices(temperatures.time.values, (10, 1), (3, 1))
 
-    ranges = np.zeros((north_ranges.shape[0], 2, temperatures.shape[1], temperatures.shape[2]), dtype=int) - 1
+    ranges = np.zeros((north_ranges.shape[0], 2, temperatures.lat.size, temperatures.lon.size), dtype=int) - 1
 
-    for i in range(temperatures.shape[1]):
-        for j in range(temperatures.shape[2]):
+    for i in range(temperatures.lat.size):
+        for j in range(temperatures.lon.size):
             if i < ranges.shape[2] / 2:
                 ranges[:, :, i, j] = south_ranges
             else:
@@ -63,26 +63,41 @@ def build_doy_map(temperatures: xarray.DataArray, threshold: xarray.DataArray):
     return doy_map
 
 
-def compute_threshold(temperature_dataset: xarray.DataArray, percentiles: np.ndarray, temp_path: str="No path provided.") -> xarray.DataArray:
+def compute_threshold(temperature_dataset: xarray.DataArray, percentiles: np.ndarray, temp_path: str="No path provided.", dask: bool=True) -> xarray.DataArray:
     """
     Computes day-of-year quantile temperatures for given temperature dataset and percentile.
-    
+
     Keyword arguments:
     temperature_data -- Temperature dataset to compute quantiles from
     percentile -- Percentile to compute the quantile temperatures at
     temp_path -- Path to 'temperature_data' temperature dataset to add to meta-data
+    dask -- Boolean indicating whether or not to apply the generalized ufunc using Dask and xarray
     """
-    
+
     window_samples = heat_core.datetimes_to_windows(temperature_dataset.time.values, 7)
-    annual_threshold = heat_core.compute_percentiles(temperature_dataset.values, window_samples, percentiles)
-    
+    if dask:
+        annual_threshold = xarray.apply_ufunc(heat_core.compute_percentiles,
+                                              temperature_dataset,
+                                              xarray.DataArray(data=window_samples,
+                                                               coords={"day": np.arange(window_samples.shape[0]),
+                                                                       "t_index": np.arange(window_samples.shape[1])}),
+                                              xarray.DataArray(data=percentiles,
+                                                               coords={"percentile": percs}),
+                                              dask="parallelized",
+                                              input_core_dims=[["time"], ["day", "t_index"], ["percentile"]],
+                                              output_core_dims=[["day", "percentile"]])
+    else:
+        annual_threshold = heat_core.compute_percentiles_nb(temperature_dataset.values,
+                                                            window_samples,
+                                                            percentiles)
+
     return xarray.Dataset(
         data_vars=dict(
-            threshold=(["percentile", "day", "lat", "lon"], annual_threshold),
+            threshold=(["lat", "lon", "day", "percentile"], annual_threshold.data),
         ),
         coords=dict(
-            lon=(["lon"], temperature_dataset.lon.values),
-            lat=(["lat"], temperature_dataset.lat.values),
+            lon=(["lon"], annual_threshold.lon.values),
+            lat=(["lat"], annual_threshold.lat.values),
             day=np.arange(0, window_samples.shape[0]),
             percentile=percentiles
         ),
@@ -124,3 +139,40 @@ def compute_heatwave_metrics(future_dataset: xarray.DataArray, threshold: xarray
     }
 
     return dataset
+
+#
+# hot_days = xarray.apply_ufunc(indicate_hot_days,
+#                                  future_temps["tasmax"],
+#                                  threshold_ds["threshold"],
+#                                  xarray.DataArray(data=doy_map1, coords={"time": future_temps.time.values}),
+#                                  dask="parallelized",
+#                                  input_core_dims=[["time"], ["day", "percentile"], ["time"]],
+#                                  output_core_dims=[["time", "percentile"]])
+
+# hw_indices = xarray.apply_ufunc(index_heatwaves,
+#                                 hot_days,
+#                                 1,
+#                                 3,
+#                                 dask="parallelized",
+#                                 input_core_dims=[["time"], [], []],
+#                                 output_core_dims=[["time"]])
+
+
+# times = future_temps.time.values
+# season_ranges_da = xarray.DataArray(data=season_ranges,
+#                                     dims=["year", "end_points", "lat", "lon"],
+#                                     coords={
+#                                          "year": np.arange(times[0].year, times[-1].year + 1, 1),
+#                                          "end_points": ["start", "finish"],
+#                                          "lat": future_temps.lat.values,
+#                                          "lon": future_temps.lon.values
+#                                      })
+
+# metric_test = xarray.apply_ufunc(heatwave_duration,
+#                                  hw_indices,
+#                                  season_ranges_da,
+#                                  dask="parallelized",
+#                                  input_core_dims=[["time"], ["year", "end_points"]],
+#                                  output_core_dims=[["year"]])
+
+
