@@ -1,4 +1,3 @@
-name: hdp_env
 dependencies:
   - xarray
   - numpy
