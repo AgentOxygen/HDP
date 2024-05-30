@@ -1,5 +1,5 @@
 name: hdp_env
 dependencies:
   - xarray
-  - numpy=1.26.4
-  - numba=0.59.1
+  - numpy
+  - numba
