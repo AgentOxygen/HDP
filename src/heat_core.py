@@ -9,7 +9,6 @@ Parallelism is enabled by default.
 
 Developer: Cameron Cummins
 Contact: cameron.cummins@utexas.edu
-2/8/24
 """
 from numba import njit, prange,  guvectorize, int64, float32, boolean
 import numba as nb
@@ -66,7 +65,6 @@ def indicate_hot_days(temperatures: np.ndarray, threshold: np.ndarray, doy_map: 
                 output[t, p] = False
 
 
-
 def datetimes_to_windows(datetimes: np.ndarray, window_radius: int=7) -> np.ndarray:
     """
     Calculates sample windows for array indices from the datetime dimension 
@@ -76,7 +74,7 @@ def datetimes_to_windows(datetimes: np.ndarray, window_radius: int=7) -> np.ndar
     """
     day_of_yr_to_index = {}
     for index, date in enumerate(datetimes):
-        if date.dayofyr in day_of_yr_to_index.keys(): 
+        if date.dayofyr in day_of_yr_to_index.keys():
             day_of_yr_to_index[date.dayofyr].append(index)
         else:
             day_of_yr_to_index[date.dayofyr] = [index]

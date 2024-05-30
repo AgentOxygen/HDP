@@ -7,7 +7,6 @@ All methods are static and should be called when computing heatwave metrics.
 
 Developer: Cameron Cummins
 Contact: cameron.cummins@utexas.edu
-2/8/24
 """
 from numba import njit
 import numba as nb
@@ -58,7 +57,9 @@ def index_heatwaves(hot_days_ts: np.ndarray, max_break: int, min_duration: int, 
             current_hw_index += 1
             in_heatwave = False
             broken = False
-    output = timeseries[1:-1]*hw_indices[1:-1]
+    for i in range(1, timeseries.size):
+        if timeseries[i]:
+            output[i-1] = hw_indices[i]
 
 
 @njit

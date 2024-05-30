@@ -8,7 +8,6 @@ Contains primary functions for computing heatwave thresholds and metrics using n
 
 Developer: Cameron Cummins
 Contact: cameron.cummins@utexas.edu
-2/8/24
 """
 import xarray
 import numpy as np
@@ -82,7 +81,7 @@ def compute_threshold(temperature_dataset: xarray.DataArray, percentiles: np.nda
                                                                coords={"day": np.arange(window_samples.shape[0]),
                                                                        "t_index": np.arange(window_samples.shape[1])}),
                                               xarray.DataArray(data=percentiles,
-                                                               coords={"percentile": percs}),
+                                                               coords={"percentile": percentiles}),
                                               dask="parallelized",
                                               input_core_dims=[["time"], ["day", "t_index"], ["percentile"]],
                                               output_core_dims=[["day", "percentile"]])
@@ -109,7 +108,7 @@ def compute_threshold(temperature_dataset: xarray.DataArray, percentiles: np.nda
     )
 
 
-def compute_heatwave_metrics(future_dataset: xarray.DataArray, threshold: xarray.DataArray):
+def compute_heatwave_metrics_old(future_dataset: xarray.DataArray, threshold: xarray.DataArray):
     datasets = []
     for perc in threshold.percentile.values:
         doy_map = build_doy_map(future_dataset, threshold["threshold"])
@@ -140,39 +139,54 @@ def compute_heatwave_metrics(future_dataset: xarray.DataArray, threshold: xarray
 
     return dataset
 
-#
-# hot_days = xarray.apply_ufunc(indicate_hot_days,
-#                                  future_temps["tasmax"],
-#                                  threshold_ds["threshold"],
-#                                  xarray.DataArray(data=doy_map1, coords={"time": future_temps.time.values}),
-#                                  dask="parallelized",
-#                                  input_core_dims=[["time"], ["day", "percentile"], ["time"]],
-#                                  output_core_dims=[["time", "percentile"]])
 
-# hw_indices = xarray.apply_ufunc(index_heatwaves,
-#                                 hot_days,
-#                                 1,
-#                                 3,
-#                                 dask="parallelized",
-#                                 input_core_dims=[["time"], [], []],
-#                                 output_core_dims=[["time"]])
+def compute_heatwave_metrics_dask(future_temps: xarray.DataArray, threshold_ds: xarray.DataArray, hw_definitions: np.array):
+    labels = []
+    metrics = []
+    for hw_def in hw_definitions:
+        labels.append(f"{hw_def[0]}-{hw_def[1]}")
+        season_ranges = compute_hemisphere_ranges(future_temps)
+        doy_map = build_doy_map(future_temps, threshold_ds)
+
+        hot_days = xarray.apply_ufunc(heat_core.indicate_hot_days,
+                                      future_temps,
+                                      threshold_ds,
+                                      xarray.DataArray(data=doy_map, coords={"time": future_temps.time.values}), 
+                                      dask="parallelized",
+                                      input_core_dims=[["time"], ["day", "percentile"], ["time"]],
+                                      output_core_dims=[["time", "percentile"]])
+
+        hw_indices = xarray.apply_ufunc(heat_stats.index_heatwaves,
+                                        hot_days,
+                                        hw_def[1],
+                                        hw_def[0],
+                                        dask="parallelized",
+                                        input_core_dims=[["time"], [], []],
+                                        output_core_dims=[["time"]])
 
 
-# times = future_temps.time.values
-# season_ranges_da = xarray.DataArray(data=season_ranges,
-#                                     dims=["year", "end_points", "lat", "lon"],
-#                                     coords={
-#                                          "year": np.arange(times[0].year, times[-1].year + 1, 1),
-#                                          "end_points": ["start", "finish"],
-#                                          "lat": future_temps.lat.values,
-#                                          "lon": future_temps.lon.values
-#                                      })
+        times = future_temps.time.values
+        season_ranges_da = xarray.DataArray(data=season_ranges,
+                                            dims=["year", "end_points", "lat", "lon"],
+                                            coords={
+                                                 "year": np.arange(times[0].year, times[-1].year + 1, 1),
+                                                 "end_points": ["start", "finish"],
+                                                 "lat": future_temps.lat.values,
+                                                 "lon": future_temps.lon.values
+                                             })
+        hwd = xarray.apply_ufunc(heat_stats.heatwave_duration,
+                                 hw_indices,
+                                 season_ranges_da,
+                                 dask="parallelized",
+                                 input_core_dims=[["time"], ["year", "end_points"]],
+                                 output_core_dims=[["year"]])
 
-# metric_test = xarray.apply_ufunc(heatwave_duration,
-#                                  hw_indices,
-#                                  season_ranges_da,
-#                                  dask="parallelized",
-#                                  input_core_dims=[["time"], ["year", "end_points"]],
-#                                  output_core_dims=[["year"]])
-
+        hwf = xarray.apply_ufunc(heat_stats.heatwave_frequency,
+                                 hw_indices,
+                                 season_ranges_da,
+                                 dask="parallelized",
+                                 input_core_dims=[["time"], ["year", "end_points"]],
+                                 output_core_dims=[["year"]])
+        metrics.append(xarray.Dataset(dict(HWF=hwf, HWD=hwd)))
+    return xarray.concat(metrics, dim="definition").assign_coords(dict(definition=labels))
 
