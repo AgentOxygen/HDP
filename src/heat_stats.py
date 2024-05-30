@@ -14,7 +14,7 @@ import numpy as np
 
 
 @nb.guvectorize(
-    [(nb.float64[:],
+    [(nb.boolean[:],
       nb.int64,
       nb.int64,
       nb.int64[:]
@@ -29,6 +29,7 @@ def index_heatwaves(hot_days_ts: np.ndarray, max_break: int, min_duration: int, 
     timeseries -- integer array of ones and zeros where ones indicates a hot day (numpy.ndarray)
     max_break -- the maximum number of days between hot days within one heatwave event (default 1)
     min_duration -- the minimum number of hot days to constitute a heatwave event, including after breaks (default 3)
+    max_subs -- the maximum number of subsequent events allowed to be apart of the initial consecutive hot days
     """
     timeseries = np.zeros(hot_days_ts.shape[0] + 2, dtype=nb.int64)
     timeseries[1:timeseries.shape[0]-1] = hot_days_ts
