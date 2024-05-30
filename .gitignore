@@ -1,3 +1,10 @@
+# Emacs
+~*
+
+# Jupyter stuff
+.virtual_documents/
+.ipynb_checkpoints/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
