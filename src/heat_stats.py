@@ -17,11 +17,12 @@ import numpy as np
     [(nb.boolean[:],
       nb.int64,
       nb.int64,
+      nb.int64,
       nb.int64[:]
      )],
-    '(t), (), () -> (t)'
+    '(t), (), (), () -> (t)'
 )
-def index_heatwaves(hot_days_ts: np.ndarray, max_break: int, min_duration: int, output: np.ndarray) -> np.ndarray:
+def index_heatwaves(hot_days_ts: np.ndarray, max_break: int, min_duration: int, max_subs: int, output: np.ndarray) -> np.ndarray:
     """
     Identifies the heatwaves in the timeseries using the specified heatwave definition
 
@@ -31,36 +32,40 @@ def index_heatwaves(hot_days_ts: np.ndarray, max_break: int, min_duration: int, 
     min_duration -- the minimum number of hot days to constitute a heatwave event, including after breaks (default 3)
     max_subs -- the maximum number of subsequent events allowed to be apart of the initial consecutive hot days
     """
-    timeseries = np.zeros(hot_days_ts.shape[0] + 2, dtype=nb.int64)
-    timeseries[1:timeseries.shape[0]-1] = hot_days_ts
-
-    diff_indices = np.where(np.diff(timeseries) != 0)[0] + 1
+    ts = np.zeros(hot_days_ts.size + 2, dtype=nb.int64)
+    for i in range(0, hot_days_ts.size):
+        if hot_days_ts[i]:
+            ts[i + 1] = 1
+    diff_ts = np.diff(ts)
+    diff_indices = np.where(diff_ts != 0)[0]
 
     in_heatwave = False
-    current_hw_index = 1
+    current_hw_index = 0
+    sub_events = 0
+    hw_indices = np.zeros(diff_ts.size, dtype=nb.int64)
 
-    hw_indices = np.zeros(timeseries.shape, dtype=nb.int64)
-
-    broken = False
-    for i in range(diff_indices.shape[0]-1):
+    for i in range(diff_indices.size-1):
         index = diff_indices[i]
         next_index = diff_indices[i+1]
 
-        if timeseries[index] == 1 and in_heatwave:
-            hw_indices[index:next_index] = current_hw_index
-        elif timeseries[index] == 0 and in_heatwave and next_index-index <= max_break and not broken:
-            hw_indices[index:next_index] = current_hw_index
-            broken = True
-        elif timeseries[index] == 1 and not in_heatwave and next_index-index >= min_duration:
+        if diff_ts[index] == 1 and next_index - index >= min_duration and not in_heatwave:
+            current_hw_index += 1
             in_heatwave = True
             hw_indices[index:next_index] = current_hw_index
-        elif in_heatwave:
-            current_hw_index += 1
+        elif diff_ts[index] == -1 and next_index - index > max_break:
             in_heatwave = False
-            broken = False
-    for i in range(1, timeseries.size):
-        if timeseries[i]:
-            output[i-1] = hw_indices[i]
+        elif diff_ts[index] == 1 and in_heatwave and sub_events < max_subs:
+            sub_events += 1
+            hw_indices[index:next_index] = current_hw_index
+        elif diff_ts[index] == 1 and in_heatwave and sub_events >= max_subs:
+            if next_index - index >= min_duration:
+                current_hw_index += 1
+                hw_indices[index:next_index] = current_hw_index
+            else:
+                in_heatwave = False
+            sub_events = 0
+
+    output[:] = hw_indices[:hw_indices.size-1]
 
 
 @njit
