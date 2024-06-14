@@ -13,16 +13,8 @@ import numba as nb
 import numpy as np
 
 
-@nb.guvectorize(
-    [(nb.boolean[:],
-      nb.int64,
-      nb.int64,
-      nb.int64,
-      nb.int64[:]
-     )],
-    '(t), (), (), () -> (t)'
-)
-def index_heatwaves(hot_days_ts: np.ndarray, max_break: int, min_duration: int, max_subs: int, output: np.ndarray) -> np.ndarray:
+@njit
+def index_heatwaves(hot_days_ts: np.ndarray, min_duration: int, max_break: int, max_subs: int) -> np.ndarray:
     """
     Identifies the heatwaves in the timeseries using the specified heatwave definition
 
@@ -65,30 +57,19 @@ def index_heatwaves(hot_days_ts: np.ndarray, max_break: int, min_duration: int, 
                 in_heatwave = False
             sub_events = 0
 
-    output[:] = hw_indices[:hw_indices.size-1]
+    return hw_indices[0:hw_indices.size-1]
 
-
-@nb.guvectorize(
-    [(nb.int64[:],
-      nb.int64[:, :],
-      nb.int64[:]
-     )],
-    '(t), (y, b) -> (y)'
-)
-def heatwave_frequency(hw_ts: np.ndarray, season_ranges: np.ndarray, output: np.ndarray) -> np.ndarray:
+@njit
+def heatwave_frequency(hw_ts: np.ndarray, season_ranges: np.ndarray) -> np.ndarray:
+    output = np.zeros(season_ranges.shape[0], dtype=nb.int64)
     for y in range(season_ranges.shape[0]):
         end_points = season_ranges[y]
         output[y] = np.sum(hw_ts[end_points[0]:end_points[1]] > 0, dtype=nb.int64)
+    return output
 
-
-@nb.guvectorize(
-    [(nb.int64[:],
-      nb.int64[:, :],
-      nb.int64[:]
-     )],
-    '(t), (y, b) -> (y)'
-)
-def heatwave_duration(hw_ts: np.ndarray, season_ranges: np.ndarray, output: np.ndarray) -> np.ndarray:
+@njit
+def heatwave_duration(hw_ts: np.ndarray, season_ranges: np.ndarray) -> np.ndarray:
+    output = np.zeros(season_ranges.shape[0], dtype=nb.int64)
     for y in range(season_ranges.shape[0]):
         end_points = season_ranges[y]
         hw_ts_slice = hw_ts[end_points[0]:end_points[1]]
@@ -100,3 +81,4 @@ def heatwave_duration(hw_ts: np.ndarray, season_ranges: np.ndarray, output: np.n
                         index_count += 1
             if index_count > output[y]:
                 output[y] = index_count
+    return output

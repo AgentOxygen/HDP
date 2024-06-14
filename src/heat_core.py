@@ -38,31 +38,16 @@ def compute_int64_spatial_func(ts_spatial_array, func):
     return results
 
 
-@njit(parallel=True)
-def indicate_hot_days_nb(temperatures: np.ndarray, threshold: np.ndarray, doy_map: np.ndarray) -> np.ndarray:
-    hot_days = np.zeros(temperatures.shape, dtype=nb.boolean)
-
-    for time_index in prange(temperatures.shape[0]):
-        if doy_map[time_index] >= 0:
-            hot_days[time_index] = temperatures[time_index] > threshold[doy_map[time_index]]
-    return hot_days
-
-
-@nb.guvectorize(
-    [(nb.float64[:],
-      nb.float64[:, :],
-      nb.int64[:],
-      nb.boolean[:, :])],
-    '(t), (d, p), (t) -> (t, p)'
-)
-def indicate_hot_days(temperatures: np.ndarray, threshold: np.ndarray, doy_map: np.ndarray, output: np.ndarray):
+@njit
+def indicate_hot_days(temperatures: np.ndarray, threshold: np.ndarray, doy_map: np.ndarray):
+    output = np.zeros(temperatures.shape, dtype=nb.boolean)
     for t in range(temperatures.size):
         doy = doy_map[t]
-        for p in range(threshold[doy].size):
-            if temperatures[t] > threshold[doy, p]:
-                output[t, p] = True
-            else:
-                output[t, p] = False
+        if temperatures[t] > threshold[doy]:
+            output[t] = True
+        else:
+            output[t] = False
+    return output
 
 
 def datetimes_to_windows(datetimes: np.ndarray, window_radius: int=7) -> np.ndarray:
