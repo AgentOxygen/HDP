@@ -1,6 +1,5 @@
 from src import heat_stats
 import numpy as np
-import pytest
 
 
 class TestHeatwaveFrequency:
@@ -34,7 +33,6 @@ class TestHeatwaveFrequency:
             [0, 1, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0, 2, 2, 2, 2, 0, 0, 0, 3],
             dtype=int)
         season_range = np.array([[0, hot_day_case2.size]], dtype=int)
-        return_values = np.zeros(season_range.shape[0], dtype=int)
         assert np.array_equal(heat_stats.heatwave_frequency(hot_day_case2, season_range), np.array([10]))
 
     def test_heatwave_frequency_case3(self):
@@ -42,13 +40,11 @@ class TestHeatwaveFrequency:
             [0, 0, 0, 1, 1, 0, 2, 0, 3, 0, 0, 0, 0, 4, 4, 4, 0, 0, 0, 0],
             dtype=int)
         season_range = np.array([[0, hot_day_case3.size]], dtype=int)
-        return_values = np.zeros(season_range.shape[0], dtype=int)
         assert np.array_equal(heat_stats.heatwave_frequency(hot_day_case3, season_range), np.array([7]))
 
     def test_heatwave_frequency_season_full_case(self):
         hot_day_full = np.ones(100, dtype=bool)
         season_range = np.array([[0, 5], [0, 10], [20, 30], [42, 50]], dtype=int)
-        return_values = np.zeros(season_range.shape[0], dtype=int)
         assert np.array_equal(heat_stats.heatwave_frequency(hot_day_full, season_range), np.array([5, 10, 10, 8]))
 
     def test_heatwave_frequency_season_case1(self):

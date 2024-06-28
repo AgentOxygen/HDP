@@ -1,7 +1,5 @@
-from src import heat_stats 
+from src import heat_stats
 import numpy as np
-import numba as nb
-import pytest
 
 
 class TestHeatwaveDuration:
