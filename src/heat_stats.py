@@ -59,6 +59,7 @@ def index_heatwaves(hot_days_ts: np.ndarray, min_duration: int, max_break: int, 
 
     return hw_indices[0:hw_indices.size-1]
 
+
 @njit
 def heatwave_frequency(hw_ts: np.ndarray, season_ranges: np.ndarray) -> np.ndarray:
     output = np.zeros(season_ranges.shape[0], dtype=nb.int64)
@@ -66,6 +67,7 @@ def heatwave_frequency(hw_ts: np.ndarray, season_ranges: np.ndarray) -> np.ndarr
         end_points = season_ranges[y]
         output[y] = np.sum(hw_ts[end_points[0]:end_points[1]] > 0, dtype=nb.int64)
     return output
+
 
 @njit
 def heatwave_duration(hw_ts: np.ndarray, season_ranges: np.ndarray) -> np.ndarray:
@@ -81,4 +83,72 @@ def heatwave_duration(hw_ts: np.ndarray, season_ranges: np.ndarray) -> np.ndarra
                         index_count += 1
             if index_count > output[y]:
                 output[y] = index_count
+    return output
+
+
+@njit
+def heatwave_frequency_with_breaks(hw_ts: np.ndarray, season_ranges: np.ndarray) -> np.ndarray:
+    output = np.zeros(season_ranges.shape[0], dtype=nb.int64)
+    for y in range(season_ranges.shape[0]):
+        end_points = season_ranges[y]
+        heatwaves_days = hw_ts[end_points[0]:end_points[1]]
+        filled_heatwave_days = np.zeros(heatwaves_days.shape, dtype=nb.int64)
+
+        heatwave_index = 0
+        start_slice = 0
+        end_slice = 0
+        for index in range(heatwaves_days.size):
+            if heatwaves_days[index] != 0 and heatwaves_days[index] != heatwave_index:
+                filled_heatwave_days[start_slice:end_slice] = heatwave_index
+                heatwave_index = heatwaves_days[index]
+                start_slice = index
+                if index == heatwaves_days.size - 1 or start_slice - end_slice <= 1:
+                    end_slice = index + 1
+            elif heatwaves_days[index] == heatwave_index:
+                end_slice = index + 1
+        filled_heatwave_days[start_slice:end_slice] = heatwave_index
+
+        output[y] = np.sum(filled_heatwave_days > 0, dtype=nb.int64)
+    return output
+
+
+@njit
+def heatwave_duration_with_breaks(hw_ts: np.ndarray, season_ranges: np.ndarray) -> np.ndarray:
+    output = np.zeros(season_ranges.shape[0], dtype=nb.int64)
+    for y in range(season_ranges.shape[0]):
+        end_points = season_ranges[y]
+        heatwaves_days = hw_ts[end_points[0]:end_points[1]]
+        filled_heatwave_days = np.zeros(heatwaves_days.shape, dtype=nb.int64)
+
+        heatwave_index = 0
+        start_slice = 0
+        end_slice = 0
+        for index in range(heatwaves_days.size):
+            if heatwaves_days[index] != 0 and heatwaves_days[index] != heatwave_index:
+                filled_heatwave_days[start_slice:end_slice] = heatwave_index
+                heatwave_index = heatwaves_days[index]
+                start_slice = index
+                if index == heatwaves_days.size - 1 or start_slice - end_slice <= 1:
+                    end_slice = index + 1
+            elif heatwaves_days[index] == heatwave_index:
+                end_slice = index + 1
+        filled_heatwave_days[start_slice:end_slice] = heatwave_index
+
+        for value in np.unique(filled_heatwave_days):
+            index_count = 0
+            if value != 0:
+                for day in filled_heatwave_days:
+                    if day == value:
+                        index_count += 1
+            if index_count > output[y]:
+                output[y] = index_count
+    return output
+
+
+@njit
+def heatwave_number(hw_ts: np.ndarray, season_ranges: np.ndarray) -> np.ndarray:
+    output = np.zeros(season_ranges.shape[0], dtype=nb.int64)
+    for y in range(season_ranges.shape[0]):
+        end_points = season_ranges[y]
+        output[y] = np.unique(hw_ts[end_points[0]:end_points[1]]).size - 1
     return output
