@@ -12,11 +12,9 @@ Contact: cameron.cummins@utexas.edu
 import xarray
 import numpy as np
 from datetime import datetime
-import sys
-sys.path.insert(1, "/projects/dgs/persad_research/cummins_ramip/RAMIP_Heat/heatwave_diagnostics_package/src")
-from heat_core import *
-from heat_stats import *
-from numba import njit
+import src.heat_core as heat_core
+import src.heat_stats as heat_stats
+from numba import njit, int64
 
 
 def get_range_indices(times: np.array, start: tuple, end: tuple):
@@ -115,11 +113,11 @@ def compute_threshold(temperature_dataset: xarray.DataArray, percentiles: np.nda
 def compute_heatwave_metrics(temperatures: np.ndarray, threshold: np.ndarray, doy_map: np.ndarray,
                              min_duration: int, max_break: int, max_subs: int,
                              season_ranges: np.ndarray) -> np.ndarray:
-    hot_days_ts = indicate_hot_days(temperatures, threshold, doy_map)
-    hw_ts = index_heatwaves(hot_days_ts, min_duration, max_break, max_subs)
-    hwf = heatwave_frequency(hw_ts, season_ranges)
-    hwd = heatwave_duration(hw_ts, season_ranges)
-    output = np.zeros((2,) + hwf.shape, dtype=nb.int64)
+    hot_days_ts = heat_core.indicate_hot_days(temperatures, threshold, doy_map)
+    hw_ts = heat_stats.index_heatwaves(hot_days_ts, min_duration, max_break, max_subs)
+    hwf = heat_stats.heatwave_frequency(hw_ts, season_ranges)
+    hwd = heat_stats.heatwave_duration(hw_ts, season_ranges)
+    output = np.zeros((2,) + hwf.shape, dtype=int64)
     output[0] = hwf
     output[1] = hwd
     return output
