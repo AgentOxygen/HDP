@@ -3,7 +3,7 @@ requires = ["setuptools", "setuptools-scm", "numpy", "dask", "netCDF4", "cftime"
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "HDP"
+name = "HDP_python"
 version = "0.1.0"
 description = "Heatwave Diagnostics Package (HDP) for computing heatwave metrics over gridded timeseries data."
 authors = [
@@ -30,4 +30,4 @@ Homepage = "https://github.com/AgentOxygen/HDP"
 Issues = "https://github.com/AgentOxygen/HDP"
 
 [tool.setuptools]
-packages = ["hdp_python"]
+packages = ["hdp"]
