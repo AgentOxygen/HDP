@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "HDP"
-version = "0.0.1"
+version = "0.1.0"
 description = "Heatwave Diagnostics Package (HDP) for computing heatwave metrics over gridded timeseries data."
 authors = [
   { name = "Cameron Cummins", email = "cameron.cummins@utexas.edu" },
@@ -25,8 +25,8 @@ dependencies = [
 keywords = ["HDP", "heat", "heatwave", "heatwave diagnostics package", "climate", "climate model", "timeseries", "heatwave metrics", "diagnostics"]
 
 [project.urls]
-Homepage = "https://github.com/AgentOxygen/heatwave_diagnostics_package"
-Issues = "https://github.com/AgentOxygen/heatwave_diagnostics_package"
+Homepage = "https://github.com/AgentOxygen/HDP"
+Issues = "https://github.com/AgentOxygen/HDP"
 
 [tool.setuptools]
 packages = ["hdp"]
