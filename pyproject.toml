@@ -13,7 +13,7 @@ license = { file = "LICENSE" }
 readme = "README.md"
 classifiers = [
     "Programming Language :: Python :: 3",
-    "License :: MIT License",
+    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
 requires-python = ">=3.12.3"
@@ -23,6 +23,8 @@ dependencies = [
   "numba >= 0.59.1",
 ]
 keywords = ["HDP", "heat", "heatwave", "heatwave diagnostics package", "climate", "climate model", "timeseries", "heatwave metrics", "diagnostics"]
+
+
 
 [project.urls]
 Homepage = "https://github.com/AgentOxygen/HDP"
