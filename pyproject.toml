@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "HDP_python"
-version = "0.1.0"
+version = "0.2.0"
 description = "Heatwave Diagnostics Package (HDP) for computing heatwave metrics over gridded timeseries data."
 authors = [
   { name = "Cameron Cummins", email = "cameron.cummins@utexas.edu" },
