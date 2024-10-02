@@ -12,8 +12,8 @@ Contact: cameron.cummins@utexas.edu
 import xarray
 import numpy as np
 from datetime import datetime
-import src.heat_core as heat_core
-import src.heat_stats as heat_stats
+import hdp.heat_core as heat_core
+import hdp.heat_stats as heat_stats
 from numba import njit, int64
 
 

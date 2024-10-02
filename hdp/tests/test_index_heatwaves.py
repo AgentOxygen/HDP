@@ -1,4 +1,4 @@
-from src import heat_stats
+from hdp import heat_stats
 import numpy as np
 import pytest
 
