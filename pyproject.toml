@@ -3,7 +3,7 @@ requires = ["flit_core >=3.2,<4"]
 build-backend = "flit_core.buildapi"
 
 [project]
-name = "hdp"
+name = "HDP"
 version = "0.0.1"
 description = "Heatwave Diagnostics Package (HDP) for computing heatwave metrics over gridded timeseries data."
 authors = [
@@ -22,8 +22,11 @@ dependencies = [
   "numpy >= 1.26.4",
   "numba >= 0.59.1",
 ]
-keywords = ["heat", "heatwave", "CESM", "climate", "climate model", "timeseries", "heatwave metrics", "diagnostics"]
-
+keywords = ["HDP", "heat", "heatwave", "heatwave diagnostics package", "climate", "climate model", "timeseries", "heatwave metrics", "diagnostics"]
 
 [project.urls]
-"Homepage" = "https://github.com/AgentOxygen/heatwave_diagnostics_package"
+Homepage = "https://github.com/AgentOxygen/heatwave_diagnostics_package"
+Issues = "https://github.com/AgentOxygen/heatwave_diagnostics_package"
+
+[tool.setuptools]
+packages = ["hdp"]
