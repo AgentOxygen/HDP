@@ -15,6 +15,8 @@ from datetime import datetime
 import hdp.heat_core as heat_core
 import hdp.heat_stats as heat_stats
 from numba import njit, int64
+from importlib.metadata import version as getVersion
+from importlib.metadata import PackageNotFoundError
 
 
 def get_range_indices(times: np.array, start: tuple, end: tuple):
@@ -91,6 +93,11 @@ def compute_threshold(temperature_dataset: xarray.DataArray, percentiles: np.nda
                                                             window_samples,
                                                             percentiles)
 
+    try:
+        version = getVersion("hdp")
+    except PackageNotFoundError:
+        version = "source"
+    
     return xarray.Dataset(
         data_vars=dict(
             threshold=(["lat", "lon", "day", "percentile"], annual_threshold.data),
@@ -104,7 +111,8 @@ def compute_threshold(temperature_dataset: xarray.DataArray, percentiles: np.nda
         attrs={
             "description": f"Percentile temperatures.",
             "percentiles": str(percentiles),
-            "temperature dataset path": temp_path
+            "temperature dataset path": temp_path,
+            "hdp_version": version
         },
     )
 
@@ -162,7 +170,29 @@ def sample_heatwave_metrics(future_temps: xarray.DataArray, threshold_ds: xarray
                 )
             ))
         percentile_datasets.append(xarray.concat(definition_datasets, dim="definition"))
-    return xarray.concat(percentile_datasets, dim="percentile")
+    try:
+        version = getVersion("hdp")
+    except PackageNotFoundError:
+        version = "source"
+
+    ds = xarray.concat(percentile_datasets, dim="percentile")
+    ds.attrs |= {
+        "description": f"Heatwave metrics.",
+        "hdp_version": version
+    }
+
+    ds["HWF"].attrs |= {"units": "days"}
+    ds["HWD"].attrs |= {"units": "days"}
+    ds["percentile"].attrs |= {
+        "range": "(0, 1)"
+    }
+    ds["definition"].attrs =| {
+        "first_number": "Minimum number of consecutively hot days.",
+        "second_number": "Maximum number of break days after first wave.",
+        "third_number": "Minimum number of consecutively hot days after the break."
+    }
+    
+    return ds
 
 
 def output_heatwave_metrics_to_zarr(temps, threshold, definitions, path):
