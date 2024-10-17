@@ -177,12 +177,20 @@ def sample_heatwave_metrics(future_temps: xarray.DataArray, threshold_ds: xarray
 
     ds = xarray.concat(percentile_datasets, dim="percentile")
     ds.attrs |= {
-        "description": f"Heatwave metrics.",
+        "description": "Heatwave metrics.",
         "hdp_version": version
     }
 
-    ds["HWF"].attrs |= {"units": "days"}
-    ds["HWD"].attrs |= {"units": "days"}
+    ds["HWF"].attrs |= {
+        "units": "days",
+        "long_name": "Heatwave Frequency", 
+        "description": "Number of days that constitute a heatwave within a heatwave season."
+    }
+    ds["HWD"].attrs |= {
+        "units": "days", 
+        "long_name": "Heatwave Duration", 
+        "description": "Length of longest heatwave during a heatwave season."
+    }
     ds["percentile"].attrs |= {
         "range": "(0, 1)"
     }
