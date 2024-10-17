@@ -194,7 +194,7 @@ def sample_heatwave_metrics(future_temps: xarray.DataArray, threshold_ds: xarray
     ds["percentile"].attrs |= {
         "range": "(0, 1)"
     }
-    ds["definition"].attrs =| {
+    ds["definition"].attrs |= {
         "first_number": "Minimum number of consecutively hot days.",
         "second_number": "Maximum number of break days after first wave.",
         "third_number": "Minimum number of consecutively hot days after the break."
