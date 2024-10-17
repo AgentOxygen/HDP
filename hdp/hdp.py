@@ -17,6 +17,7 @@ import hdp.heat_stats as heat_stats
 from numba import njit, int64
 from importlib.metadata import version as getVersion
 from importlib.metadata import PackageNotFoundError
+import cftime
 
 
 def get_range_indices(times: np.array, start: tuple, end: tuple):
@@ -131,7 +132,7 @@ def compute_heatwave_metrics(temperatures: np.ndarray, threshold: np.ndarray, do
     return output
 
 
-def sample_heatwave_metrics(future_temps: xarray.DataArray, threshold_ds: xarray.DataArray, hw_definitions: np.array):
+def sample_heatwave_metrics(future_temps: xarray.DataArray, threshold_ds: xarray.DataArray, hw_definitions: np.array, use_cftime: bool=True):
     percentile_datasets = []
     for perc in threshold_ds.percentile.values:
         perc_threshold = threshold_ds.sel(percentile=perc)
@@ -176,6 +177,12 @@ def sample_heatwave_metrics(future_temps: xarray.DataArray, threshold_ds: xarray
         version = "source"
 
     ds = xarray.concat(percentile_datasets, dim="percentile")
+
+    if use_cftime:
+        start_ts = cftime.datetime(ds.year[0], 1, 1, calendar=future_temps.time.values[0].calendar)
+        end_ts = cftime.datetime(ds.year[-1], 1, 1, calendar=future_temps.time.values[0].calendar)
+        ds = ds.rename(dict(year="time")).assign_coords(dict(time=xarray.cftime_range(start_ts, end_ts, periods=ds.year.size)))
+        
     ds.attrs |= {
         "description": "Heatwave metrics.",
         "hdp_version": version
