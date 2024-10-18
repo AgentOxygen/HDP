@@ -98,8 +98,8 @@ def compute_threshold(temperature_dataset: xarray.DataArray, percentiles: np.nda
         version = getVersion("hdp")
     except PackageNotFoundError:
         version = "source"
-    
-    return xarray.Dataset(
+
+    ds = xarray.Dataset(
         data_vars=dict(
             threshold=(["lat", "lon", "day", "percentile"], annual_threshold.data),
         ),
@@ -109,13 +109,15 @@ def compute_threshold(temperature_dataset: xarray.DataArray, percentiles: np.nda
             day=np.arange(0, window_samples.shape[0]),
             percentile=percentiles
         ),
-        attrs={
-            "description": f"Percentile temperatures.",
-            "percentiles": str(percentiles),
-            "temperature dataset path": temp_path,
-            "hdp_version": version
-        },
     )
+
+    ds["threshold"].attrs |= {
+        "description": f"Percentile temperatures.",
+        "percentiles": str(percentiles),
+        "temperature dataset path": temp_path,
+        "hdp_version": version
+    }
+    return ds
 
 
 @njit
@@ -176,8 +178,8 @@ def sample_heatwave_metrics(future_temps: xarray.DataArray, threshold_ds: xarray
     except PackageNotFoundError:
         version = "source"
 
-    ds = xarray.concat(percentile_datasets, dim="percentile")
-
+    ds = xarray.merge([threshold_ds, xarray.concat(percentile_datasets, dim="percentile")])
+    
     if use_cftime:
         start_ts = cftime.datetime(ds.year[0], 1, 1, calendar=future_temps.time.values[0].calendar)
         end_ts = cftime.datetime(ds.year[-1], 1, 1, calendar=future_temps.time.values[0].calendar)
