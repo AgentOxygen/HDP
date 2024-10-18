@@ -1,10 +1,10 @@
 [build-system]
-requires = ["setuptools", "setuptools-scm", "numpy", "dask", "netCDF4", "cftime"]
+requires = ["setuptools", "setuptools-scm", "numpy", "dask", "netCDF4", "cftime", "cartopy"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "HDP_python"
-version = "0.2.0"
+version = "0.7.0"
 description = "Heatwave Diagnostics Package (HDP) for computing heatwave metrics over gridded timeseries data."
 authors = [
   { name = "Cameron Cummins", email = "cameron.cummins@utexas.edu" },
@@ -19,6 +19,7 @@ classifiers = [
 requires-python = ">=3.12.3"
 dependencies = [
   "xarray >= 2024.3.0",
+  "cartopy"
   "numpy >= 1.26.4",
   "numba >= 0.59.1",
 ]
