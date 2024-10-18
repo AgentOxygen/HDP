@@ -189,12 +189,12 @@ def sample_heatwave_metrics(future_temps: xarray.DataArray, threshold_ds: xarray
     }
 
     ds["HWF"].attrs |= {
-        "units": "days",
+        "units": "heatwave days",
         "long_name": "Heatwave Frequency", 
         "description": "Number of days that constitute a heatwave within a heatwave season."
     }
     ds["HWD"].attrs |= {
-        "units": "days", 
+        "units": "heatwave days", 
         "long_name": "Heatwave Duration", 
         "description": "Length of longest heatwave during a heatwave season."
     }
