@@ -19,7 +19,7 @@ classifiers = [
 requires-python = ">=3.12.3"
 dependencies = [
   "xarray >= 2024.3.0",
-  "cartopy"
+  "cartopy",
   "numpy >= 1.26.4",
   "numba >= 0.59.1",
 ]
