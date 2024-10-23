@@ -6,9 +6,11 @@ import numpy as np
 import cartopy.crs as ccrs
 from cartopy.util import add_cyclic_point
 from matplotlib import cm
+import os
 
 
-plt.style.use("hdp/pacl.mplstyle")
+PATH_ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+plt.style.use(f"{PATH_ROOT_DIR}/pacl.mplstyle")
 
 
 class WinkelTripel(ccrs._WarpedRectangularProjection):
