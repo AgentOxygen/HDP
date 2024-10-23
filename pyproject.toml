@@ -32,3 +32,8 @@ Issues = "https://github.com/AgentOxygen/HDP"
 
 [tool.setuptools]
 packages = ["hdp"]
+
+[tool.setuptools.package-data]
+hdp = [
+    "pacl.mplstyle"
+]
