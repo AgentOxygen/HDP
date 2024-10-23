@@ -14,6 +14,7 @@ import numpy as np
 from datetime import datetime
 import hdp.heat_core as heat_core
 import hdp.heat_stats as heat_stats
+from hdp.hw_dataset import HeatwaveDataset
 from numba import njit, int64
 from importlib.metadata import version as getVersion
 from importlib.metadata import PackageNotFoundError
