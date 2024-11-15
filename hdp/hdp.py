@@ -129,9 +129,11 @@ def compute_heatwave_metrics(temperatures: np.ndarray, threshold: np.ndarray, do
     hw_ts = heat_stats.index_heatwaves(hot_days_ts, min_duration, max_break, max_subs)
     hwf = heat_stats.heatwave_frequency(hw_ts, season_ranges)
     hwd = heat_stats.heatwave_duration(hw_ts, season_ranges)
-    output = np.zeros((2,) + hwf.shape, dtype=int64)
+    hwn = heat_stats.heatwave_number(hw_ts, season_ranges)
+    output = np.zeros((3,) + hwf.shape, dtype=int64)
     output[0] = hwf
     output[1] = hwd
+    output[2] = hwn
     return output
 
 
@@ -163,11 +165,12 @@ def sample_heatwave_metrics(future_temps: xarray.DataArray, threshold_ds: xarray
                                              vectorize=True, dask="parallelized",
                                              input_core_dims=[["time"], ["day"], ["time"], [], [], [], ["year", "end_points"]],
                                              output_core_dims=[["metric", "year"]],
-                                             output_dtypes=int, dask_gufunc_kwargs=dict(output_sizes=dict(metric=2)))
+                                             output_dtypes=int, dask_gufunc_kwargs=dict(output_sizes=dict(metric=3)))
             definition_datasets.append(xarray.Dataset(
                 dict(
                     HWF=metric_data.sel(metric=0),
-                    HWD=metric_data.sel(metric=1)
+                    HWD=metric_data.sel(metric=1),
+                    HWN=metric_data.sel(metric=2)
                 ),
                 coords=dict(
                     definition=f"{hw_def[0]}-{hw_def[1]}-{hw_def[2]}"
@@ -200,6 +203,11 @@ def sample_heatwave_metrics(future_temps: xarray.DataArray, threshold_ds: xarray
         "units": "heatwave days", 
         "long_name": "Heatwave Duration", 
         "description": "Length of longest heatwave during a heatwave season."
+    }
+    ds["HWN"].attrs |= {
+        "units": "heatwave events", 
+        "long_name": "Heatwave Number", 
+        "description": "Number of distinct heatwaves during a heatwave season."
     }
     ds["percentile"].attrs |= {
         "range": "(0, 1)"
