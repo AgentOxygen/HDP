@@ -152,3 +152,18 @@ def heatwave_number(hw_ts: np.ndarray, season_ranges: np.ndarray) -> np.ndarray:
         end_points = season_ranges[y]
         output[y] = np.unique(hw_ts[end_points[0]:end_points[1]]).size - 1
     return output
+
+
+@njit
+def heat_index(T, RH):
+    """T should be in units F and RH in range from [0, 100]"""
+    HI = -42.379 + 2.04901523*T + 10.14333127*RH - 0.22475541*T*RH - 0.00683783*T*T - 0.05481717*RH*RH + 0.00122874*T*T*RH + 0.00085282*T*RH*RH - 0.00000199*T*T*RH*RH
+    
+    if RH < 13 and 80 <= T <= 112:
+        HI -= ((13 - RH)/4)*np.sqrt(((17 - np.abs(T - 95))/17))
+    elif RH > 85 and 80 <= T <= 87:
+        HI += ((RH - 85)/10) * ((87 - T)/5)
+    
+    if HI < 80:
+        HI = 0.5 * (T + 61.0 + ((T - 68.0)*1.2) + (RH*0.094))
+    return HI
