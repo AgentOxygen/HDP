@@ -22,6 +22,10 @@ dependencies = [
   "cartopy",
   "numpy >= 1.26.4",
   "numba >= 0.59.1",
+  "nc_time_axis",
+  "dask",
+  "zarr",
+  "netCDF4"
 ]
 keywords = ["HDP", "heat", "heatwave", "heatwave diagnostics package", "climate", "climate model", "timeseries", "heatwave metrics", "diagnostics"]
 
@@ -29,6 +33,9 @@ keywords = ["HDP", "heat", "heatwave", "heatwave diagnostics package", "climate"
 [project.urls]
 Homepage = "https://github.com/AgentOxygen/HDP"
 Issues = "https://github.com/AgentOxygen/HDP"
+
+[project.scripts]
+hdp = "hdp.cli:main"
 
 [tool.setuptools]
 packages = ["hdp"]
