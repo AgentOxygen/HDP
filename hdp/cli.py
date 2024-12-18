@@ -18,22 +18,8 @@ def main():
     parser.add_argument('-o', '--overwrite', action='store_true')
     parser.add_argument('-v', '--verbose', action='store_true')
     
-    # measure_parser = subparsers.add_parser('measure', help='Compute measures of heat from climate variable datasets')
     threshold_parser = subparsers.add_parser('threshold', help='Generate a range of extreme heat thresholds from baseline heat measure datasets')
     metric_parser = subparsers.add_parser('metric', help='Generate heatwave metrics for given threshold and heat measure datasets')
-
-    # measure_parser.add_argument('output_path', metavar="PATH", type=str, help="Path to write heat measure dataset to as a netCDF or Zarr store")
-    # # measure_parser.add_argument('-i', '--input_path', metavar="PATH", type=str, help="Path to netCDF for Zarr store containing general daily data")
-    # # measure_parser.add_argument('-var', '--variable', metavar="NAME", type=str, help="Variable to use for general dataset")
-    # measure_parser.add_argument('-ta', '--tavg_path', metavar="PATH", type=str, help="Path to netCDF or Zarr store containing daily average temperature data")
-    # measure_parser.add_argument('-tx', '--tmax_path', metavar="PATH", type=str, help="Path to netCDF or Zarr store containing daily maximum temperature data")
-    # measure_parser.add_argument('-tn', '--tmin_path', metavar="PATH", type=str, help="Path to netCDF or Zarr store containing daily minimum temperature data")
-    # measure_parser.add_argument('-rh', '--rh_path', metavar="PATH", type=str, help="Path to netCDF for Zarr store containing daily relative humidity data")
-    # measure_parser.add_argument('-tav', '--tavg_var', metavar="NAME", type=str, help="Variable to use for netCDF or Zarr store containing daily average temperature data")
-    # measure_parser.add_argument('-txv', '--tmax_var', metavar="NAME", type=str, help="Variable to use for netCDF or Zarr store containing daily maximum temperature data")
-    # measure_parser.add_argument('-tnv', '--tmin_var', metavar="NAME", type=str, help="Variable to use for netCDF or Zarr store containing daily minimum temperature data")
-    # measure_parser.add_argument('-rhv', '--rh_var', metavar="NAME", type=str, help="Variable to use for netCDF to netCDF or Zarr store containing daily relative humidity data")
-    # measure_parser.add_argument('-a', '--append', action='store_true', help="If output dataset exists, append new variables")
 
     threshold_parser.add_argument('output_path', type=str, help="Path to write threshold dataset to as a netCDF or Zarr store")
     threshold_parser.add_argument('input_path', type=str, help="Path to netCDF for Zarr store containing baseline measurements to generate thresholds for")
@@ -51,7 +37,6 @@ def main():
     metric_parser.add_argument('-p','--percentile', nargs='+', help='List of percentiles to calculate metrics for, assuming thresholds exist (ex: 0.9 0.91 0.92)')    
     
     args = parser.parse_args()
-    # measure_args = measure_parser.parse_args()
     threshold_args = threshold_parser.parse_args()
     metric_args = metric_parser.parse_args()
 
