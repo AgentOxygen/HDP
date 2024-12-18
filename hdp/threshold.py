@@ -73,7 +73,7 @@ def compute_threshold(baseline_data: xarray.DataArray, percentiles: np.ndarray, 
     
     rolling_windows_indices = datetimes_to_windows(baseline_data.time.values, rolling_window_size)
     rolling_windows_coords ={
-        "day": np.arange(rolling_windows_indices.shape[0]),
+        "doy": np.arange(rolling_windows_indices.shape[0]),
         "t_index": np.arange(rolling_windows_indices.shape[1])
     }
     rolling_windows = xarray.DataArray(data=rolling_windows_indices,
@@ -87,8 +87,8 @@ def compute_threshold(baseline_data: xarray.DataArray, percentiles: np.ndarray, 
                                       rolling_windows,
                                       percentiles,
                                       dask="parallelized",
-                                      input_core_dims=[["time"], ["day", "t_index"], ["percentile"]],
-                                      output_core_dims=[["day", "percentile"]],
+                                      input_core_dims=[["time"], ["doy", "t_index"], ["percentile"]],
+                                      output_core_dims=[["doy", "percentile"]],
                                       keep_attrs="override")
     history_str = ""
     if "history" in threshold_da.attrs:
@@ -158,7 +158,7 @@ def compute_threshold_io(baseline_path: str,
     else:
         baseline_data = xarray.open_dataset(baseline_path)[baseline_var]
 
-    baseline_data.attrs["source_path"] = str(baseline_path)
+    baseline_data.attrs["baseline_source"] = str(baseline_path)
     threshold_ds = compute_threshold(baseline_data, percentiles, no_season, rolling_window_size, fixed_value)
 
     if output_path.suffix == ".zarr":
