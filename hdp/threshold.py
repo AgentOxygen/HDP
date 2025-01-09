@@ -11,6 +11,12 @@ from pathlib import Path
 
 
 def get_time_stamp():
+    """
+    Summary
+
+    :return: 
+    :rtype: str
+    """
     return datetime.datetime.fromtimestamp(time()).strftime('%Y-%m-%d %H:%M')
 
 
@@ -18,8 +24,13 @@ def datetimes_to_windows(datetimes: np.ndarray, window_radius: int) -> np.ndarra
     """
     Calculates sample windows for array indices from the datetime dimension 
 
-    datetimes - array of datetime objects corresponding to the dataset's time dimension
-    window_radius - radius of windows to generate
+
+    :param datetimes: Array of datetime objects corresponding to the dataset's time dimension
+    :type datetimes: np.ndarray
+    :param window_radius: Radius of windows to generate
+    :type window_radius: int
+    :return: 
+    :rtype: np.ndarray
     """
     day_of_yr_to_index = {}
     for index, date in enumerate(datetimes):
@@ -52,14 +63,21 @@ def datetimes_to_windows(datetimes: np.ndarray, window_radius: int) -> np.ndarra
       nb.float64[:, :])],
     '(t), (d, b), (p) -> (d, p)'
 )
-def compute_percentiles(temperatures, window_samples, percentiles, output):
+def compute_percentiles(temperatures: np.ndarray, window_samples: np.ndarray, percentiles: np.ndarray, output: np.ndarray):
     """
-    Generalized universal function that computes the temperatures for
-    multiple percentiles using sample index windows.
+    Generalized universal function that computes the temperatures for multiple percentiles using sample index windows.
 
-    temperatures - dataset containing temperatures to compute percentiles from
-    window_samples - array containing "windows" of indices cenetered at each day of the year
-    percentiles - array of perecentiles to compute [0, 1]
+
+    :param temperatures: Dataset containing temperatures to compute percentiles from
+    :type temperatures: np.ndarray
+    :param window_samples: Array containing "windows" of indices cenetered at each day of the year
+    :type window_samples: np.ndarray
+    :param percentiles: Array of perecentiles to compute [0, 1]
+    :type percentiles: np.ndarray
+    :param output: Array to write percentiles to
+    :type output: np.ndarray
+    :return: 
+    :rtype: None
     """
     for doy_index in range(window_samples.shape[0]):
         doy_temps = np.zeros(window_samples[doy_index].size)
@@ -69,6 +87,23 @@ def compute_percentiles(temperatures, window_samples, percentiles, output):
 
 
 def compute_threshold(baseline_data: xarray.DataArray, percentiles: np.ndarray, no_season: bool=False, rolling_window_size: int=7, fixed_value: float=None):
+    """
+    Summary
+
+
+    :param baseline_data:
+    :type baseline_data: xarray.DataArray
+    :param percentiles:
+    :type percentiles: np.ndarray
+    :param no_season:
+    :type no_season: bool
+    :param rolling_window_size:
+    :type rolling_window_size: int
+    :param fixed_value:
+    :type fixed_value: float
+    :return: 
+    :rtype: None
+    """
     percentiles = np.array(percentiles)
     
     rolling_windows_indices = datetimes_to_windows(baseline_data.time.values, rolling_window_size)
@@ -138,6 +173,29 @@ def compute_threshold_io(baseline_path: str,
                          rolling_window_size: int=7,
                          fixed_value: float=None,
                          overwrite: bool=False):
+    """
+    Summary
+
+
+    :param baseline_path:
+    :type baseline_path: str
+    :param baseline_var:
+    :type baseline_var: str
+    :param output_path:
+    :type output_path: str
+    :param percentiles:
+    :type percentiles: np.ndarray
+    :param no_season:
+    :type no_season: bool
+    :param rolling_window_size:
+    :type rolling_window_size: int
+    :param fixed_value:
+    :type fixed_value: float
+    :param overwrite:
+    :type overwrite: bool
+    :return: 
+    :rtype: None
+    """
     output_path = Path(output_path)
     baseline_path = Path(baseline_path)
     
