@@ -1,1 +1,9 @@
 furo
+xarray
+cartopy
+numpy
+numba
+nc_time_axis
+dask
+zarr
+netCDF4
