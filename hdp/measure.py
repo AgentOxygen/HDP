@@ -89,26 +89,14 @@ def convert_temp_units(temp_ds):
     return temp_ds
 
 
-def format_standard_measures(tavg: xarray.DataArray = None, tmin: xarray.DataArray = None, tmax: xarray.DataArray = None, rh: xarray.DataArray = None):
+def format_standard_measures(temp_datasets: list[xarray.DataArray], rh: xarray.DataArray = None):
     measures = []
-    
-    if tavg is not None:
-        assert "units" in tavg.attrs, "Attribute 'units' not found in tavg dataset."
-        assert tavg.attrs["units"] in TEMPERATURE_UNITS, f"Units for tavg must be one of the following: {TEMPERATURE_UNITS}"
-        tavg = convert_temp_units(tavg).rename("tavg")
-        measures.append(tavg)
 
-    if tmin is not None:
-        assert "units" in tmin.attrs, "Attribute 'units' not found in tmin dataset."
-        assert tmin.attrs["units"] in TEMPERATURE_UNITS, f"Units for tmin must be one of the following: {TEMPERATURE_UNITS}"
-        tmin = convert_temp_units(tmin).rename("tmin")
-        measures.append(tmin)
-
-    if tmax is not None:     
-        assert "units" in tmax.attrs, "Attribute 'units' not found in tmax dataset."
-        assert tmax.attrs["units"] in TEMPERATURE_UNITS, f"Units for tmax must be one of the following: {TEMPERATURE_UNITS}"
-        tmax = convert_temp_units(tmax).rename("tmax")
-        measures.append(tmax)
+    for temp_ds in temp_datasets:
+        assert "units" in temp_ds.attrs, f"Attribute 'units' not found in '{temp_ds.name}' dataset."
+        assert temp_ds.attrs["units"] in TEMPERATURE_UNITS, f"Units for '{temp_ds.name}' must be one of the following: {TEMPERATURE_UNITS}"
+        temp_ds = convert_temp_units(temp_ds)
+        measures.append(temp_ds)
 
     if rh is not None:
         assert "units" in rh.attrs, "Attribute 'units' not found in rh dataset."
@@ -118,14 +106,9 @@ def format_standard_measures(tavg: xarray.DataArray = None, tmin: xarray.DataArr
             rh *= 100
             rh.attrs["units"] = "%"
 
-        if tavg is not None:
-            measures.append(fahrenheit_to_celsius(apply_heat_index(celsius_to_fahrenheit(tavg), rh).rename("tavg_hi")))
-        
-        if tmin is not None:
-            measures.append(fahrenheit_to_celsius(apply_heat_index(celsius_to_fahrenheit(tmin), rh).rename("tmin_hi")))
-        
-        if tmax is not None:
-            measures.append(fahrenheit_to_celsius(apply_heat_index(celsius_to_fahrenheit(tmax), rh).rename("tmax_hi")))
+        num_measures = len(measures)
+        for index in range(num_measures):
+            measures.append(fahrenheit_to_celsius(apply_heat_index(celsius_to_fahrenheit(measures[index]), rh).rename(f"{measures[index].name}_hi")))
     
     agg_ds = xarray.merge(measures)
     history = f"({get_time_stamp()}) Dataset aggergated by HDP with measures: {[ds.name for ds in measures]}"
