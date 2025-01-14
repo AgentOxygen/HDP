@@ -15,5 +15,5 @@ def add_history(ds, msg):
     return ds
 
 
-def getVersion():
+def get_version():
     return version('hdp_python')
