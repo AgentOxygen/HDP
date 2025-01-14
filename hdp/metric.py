@@ -129,6 +129,40 @@ def heatwave_duration(hw_ts: np.ndarray, season_ranges: np.ndarray) -> np.ndarra
     return output
 
 
+@nb.njit
+def heatwave_average(hw_ts: np.ndarray, season_ranges: np.ndarray) -> np.ndarray:
+    """
+    Summary
+
+    :param hw_ts: Integer timeseries of indexed heatwave days.
+    :type hw_ts: np.ndarray
+    :param season_ranges: Range of array indices, corresponding to heatwave season, in indexed heatwave day timeseries to count.
+    :type season_ranges: np.ndarray
+    :return: Length of longest heatwave per heatwave season.
+    :rtype: np.ndarray
+    """
+    output = np.zeros(season_ranges.shape[0], dtype=nb.float64)
+    for y in range(season_ranges.shape[0]):
+        end_points = season_ranges[y]
+        hw_ts_slice = hw_ts[end_points[0]:end_points[1]]
+        unique_indices = np.unique(hw_ts_slice)
+        
+        if unique_indices.size == 1:
+            output[y] = 0
+        else:
+            unique_indices = unique_indices[1:]
+            
+        hw_lengths = np.zeros(unique_indices.size, dtype=nb.int64)
+        for index, value in enumerate(unique_indices):
+            if value != 0:
+                for day in hw_ts_slice:
+                    if day == value:
+                        hw_lengths[index] += 1
+        
+        output[y] = np.max(hw_lengths)
+    return output
+    
+
 def get_range_indices(times: np.ndarray, start: tuple, end: tuple) -> np.ndarray:
     """
     Summary
