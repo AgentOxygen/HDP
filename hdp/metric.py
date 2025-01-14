@@ -2,6 +2,7 @@ import xarray
 import numpy as np
 import cftime
 import numba as nb
+from importlib.metadata import version as getVersion
 
 
 @nb.njit
@@ -196,8 +197,8 @@ def build_doy_map(times: np.ndarray) -> np.ndarray:
     :return: Day of year for each timestep.
     :rtype: np.ndarray
     """
-    doy_map = np.zeros(measure.time.size, dtype=int) - 1
-    for time_index, time in enumerate(times.values):
+    doy_map = np.zeros(times.size, dtype=int) - 1
+    for time_index, time in enumerate(times):
         doy_map[time_index] = time.dayofyr - 1
     return doy_map
 
@@ -262,7 +263,24 @@ def compute_heatwave_metrics(measure: np.ndarray, threshold: np.ndarray, doy_map
     return output
 
 
-def compute_metrics(measure: xarray.DataArray, threshold: xarray.DataArray, hw_definitions: list, include_threshold: bool=True, check_variables: bool=True) -> xarray.Dataset:
+def compute_group_metrics(measures: xarray.Dataset, thresholds:xarray.Dataset, hw_definitions: list, include_threshold: bool=False, check_variables: bool=True) -> xarray.Dataset:
+    metric_sets = []
+    for measure_name in list(measures.keys()):
+        measure = measures[measure_name]
+        for threshold_name in list(thresholds.keys()):
+            threshold = thresholds[threshold_name]
+            if threshold.attrs["baseline_variable"] == measure.attrs["input_variable"]:
+                hw_metrics = compute_individual_metrics(measure, threshold, hw_definitions, include_threshold, check_variables)
+                var_renames = {name:f"{measure_name}.{threshold_name}.{name}" for name in list(hw_metrics.keys())}
+                metric_sets.append(hw_metrics.rename(var_renames))
+
+    aggr_ds = xarray.merge(metric_sets)
+    aggr_ds.attrs["variable_naming_desc"] = "(heat measure).(threshold used).(heatwave metric)"
+    aggr_ds.attrs["variable_naming_delimeter"] = "."
+    return aggr_ds
+
+
+def compute_individual_metrics(measure: xarray.DataArray, threshold: xarray.DataArray, hw_definitions: list, include_threshold: bool=True, check_variables: bool=True) -> xarray.Dataset:
     """
     Summary
 
@@ -280,10 +298,10 @@ def compute_metrics(measure: xarray.DataArray, threshold: xarray.DataArray, hw_d
     :rtype: xarray.Dataset
     """
     if check_variables:
-        assert threshold.name == "threshold_" + measure.name
         assert "hdp_type" in threshold.attrs
         assert threshold.attrs["hdp_type"] == "threshold"
-        assert measure.time.values[0].calendar == threshold.doy.baseline_calendar 
+        assert threshold.attrs["baseline_variable"] == measure.attrs["input_variable"]
+        assert threshold.attrs["baseline_calendar"] == measure.time.values[0].calendar
     
     percentile_datasets = []
     times = measure.time.values
