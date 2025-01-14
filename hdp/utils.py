@@ -11,7 +11,7 @@ def add_history(ds, msg):
     if "history" in ds.attrs:
         ds.attrs["history"] += f"({get_time_stamp()}) {msg}\n"
     else:
-        ds.attrs["history"] = f"({get_time_stamp()}) History metadata initialized by HDP.\n"
+        ds.attrs["history"] = f"({get_time_stamp()}) History metadata initialized by HDP v{get_version()}.\n"
     return ds
 
 
