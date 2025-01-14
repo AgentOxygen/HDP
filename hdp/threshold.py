@@ -86,6 +86,30 @@ def compute_percentiles(temperatures: np.ndarray, window_samples: np.ndarray, pe
         output[doy_index] = np.quantile(doy_temps, percentiles)
 
 
+def compute_thresholds(baseline_dataset: list[xarray.DataArray], percentiles: np.ndarray, no_season: bool=False, rolling_window_size: int=7, fixed_value: float=None):
+    """
+    Summary
+
+
+    :param baseline_data:
+    :type baseline_data: xarray.DataArray
+    :param percentiles:
+    :type percentiles: np.ndarray
+    :param no_season:
+    :type no_season: bool
+    :param rolling_window_size:
+    :type rolling_window_size: int
+    :param fixed_value:
+    :type fixed_value: float
+    :return: 
+    :rtype: None
+    """
+    threshold_datasets = []
+    for baseline_data in baseline_dataset:
+        threshold_datasets.append(compute_threshold(baseline_data, percentiles, no_season, rolling_window_size, fixed_value))
+    return xarray.merge(threshold_datasets)
+
+
 def compute_threshold(baseline_data: xarray.DataArray, percentiles: np.ndarray, no_season: bool=False, rolling_window_size: int=7, fixed_value: float=None):
     """
     Summary
@@ -134,10 +158,11 @@ def compute_threshold(baseline_data: xarray.DataArray, percentiles: np.ndarray, 
         history_str += f"({get_time_stamp()}) Metadata updated: 'long_name' value '{threshold_da.attrs["long_name"]}' overwritten by HDP.\n"
     
     threshold_da.attrs |= {
-        "long_name": f"Percentile threshold values for baseline variable",
+        "long_name": f"Percentile threshold values for baseline variable '{baseline_data.name}'",
         "baseline_variable": baseline_data.name,
         "baseline_start_time": f"{str(baseline_data.time.values[0])}",
         "baseline_end_time": f"{str(baseline_data.time.values[-1])}",
+        "baseline_calendar": f"{str(baseline_data.time.values[-1].calendar)}",
         "param_percentiles": str(percentiles.values),
         "param_noseason": str(no_season),
         "param_rolling_window_size": str(rolling_window_size),
@@ -148,7 +173,7 @@ def compute_threshold(baseline_data: xarray.DataArray, percentiles: np.ndarray, 
     
     ds = xarray.Dataset(
         data_vars={
-            f"threshold_{baseline_data.name}": threshold_da,
+            f"{baseline_data.name}_threshold": threshold_da,
         },
         coords=dict(
             lon=(["lon"], threshold_da.lon.values),
