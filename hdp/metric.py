@@ -111,14 +111,21 @@ def heatwave_duration(hw_ts: np.ndarray, season_ranges: np.ndarray) -> np.ndarra
     for y in range(season_ranges.shape[0]):
         end_points = season_ranges[y]
         hw_ts_slice = hw_ts[end_points[0]:end_points[1]]
-        for value in np.unique(hw_ts_slice):
-            index_count = 0
+        unique_indices = np.unique(hw_ts_slice)
+        
+        if unique_indices.size == 1:
+            output[y] = 0
+        else:
+            unique_indices = unique_indices[1:]
+            
+        hw_lengths = np.zeros(unique_indices.size, dtype=nb.int64)
+        for index, value in enumerate(unique_indices):
             if value != 0:
                 for day in hw_ts_slice:
                     if day == value:
-                        index_count += 1
-            if index_count > output[y]:
-                output[y] = index_count
+                        hw_lengths[index] += 1
+        
+        output[y] = np.max(hw_lengths)
     return output
 
 
