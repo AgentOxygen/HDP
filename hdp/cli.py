@@ -7,13 +7,13 @@ Command Line Interface for running HDP in the terminal without a notebook.
 Developer: Cameron Cummins
 Contact: cameron.cummins@utexas.edu
 """
-from importlib.metadata import version as getVersion
+from hdp.utils import get_version
 import argparse
 from hdp.threshold import compute_threshold_io
 from hdp.metric import compute_metrics_io
 
 def main():
-    parser = argparse.ArgumentParser(description = f"Command Line Interface (CLI) for Heatwave Diagnostics Package (HDP) Version {getVersion('hdp_python')}")
+    parser = argparse.ArgumentParser(description = f"Command Line Interface (CLI) for Heatwave Diagnostics Package (HDP) Version {get_version()}")
     subparsers = parser.add_subparsers(help='HDP commands')
     parser.add_argument('-d', '--dask', metavar="ADDRESS", type=str, help="Address of existing dask cluster to connect to instead of creating internally")
     parser.add_argument('-o', '--overwrite', action='store_true')
@@ -22,7 +22,7 @@ def main():
 
     args = parser.parse_args()
     if args.version:
-        print(getVersion('hdp_python'))
+        print(get_version())
         return None
     
     threshold_parser = subparsers.add_parser('threshold', help='Generate a range of extreme heat thresholds from baseline heat measure datasets')
