@@ -23,7 +23,7 @@ dependencies = [
   "numpy >= 1.26.4",
   "numba >= 0.59.1",
   "nc_time_axis",
-  "dask",
+  "dask[complete]",
   "zarr",
   "netCDF4"
 ]
@@ -42,5 +42,5 @@ packages = ["hdp"]
 
 [tool.setuptools.package-data]
 hdp = [
-    "pacl.mplstyle"
+    "graphics/pacl.mplstyle"
 ]
