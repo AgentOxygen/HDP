@@ -160,7 +160,7 @@ def heatwave_average(hw_ts: np.ndarray, season_ranges: np.ndarray) -> np.ndarray
                     if day == value:
                         hw_lengths[index] += 1
         
-        output[y] = np.max(hw_lengths)
+        output[y] = np.mean(hw_lengths)
     return output
     
 
