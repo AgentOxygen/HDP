@@ -336,7 +336,7 @@ def compute_group_metrics(measures: xarray.Dataset, thresholds:xarray.Dataset, h
         measure = measures[measure_name]
         for threshold_name in list(thresholds.keys()):
             threshold = thresholds[threshold_name]
-            if threshold.attrs["baseline_variable"] == measure.attrs["input_variable"]:
+            if threshold.attrs["baseline_variable"] == measure.attrs["baseline_variable"]:
                 hw_metrics = compute_individual_metrics(measure, threshold, hw_definitions, include_threshold, check_variables)
                 var_renames = {name:f"{measure_name}.{threshold_name}.{name}" for name in list(hw_metrics.keys())}
                 metric_sets.append(hw_metrics.rename(var_renames))
@@ -367,7 +367,7 @@ def compute_individual_metrics(measure: xarray.DataArray, threshold: xarray.Data
     if check_variables:
         assert "hdp_type" in threshold.attrs
         assert threshold.attrs["hdp_type"] == "threshold"
-        assert threshold.attrs["baseline_variable"] == measure.attrs["input_variable"]
+        assert threshold.attrs["baseline_variable"] == measure.attrs["baseline_variable"]
         assert threshold.attrs["baseline_calendar"] == measure.time.values[0].calendar
 
     combined_history = ""
