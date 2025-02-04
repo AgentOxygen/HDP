@@ -83,6 +83,7 @@ def apply_heat_index(temp: xarray.DataArray, rh: xarray.DataArray) -> xarray.Dat
                                output_dtypes=[float])
     hi_da.attrs = temp.attrs
     hi_da = hi_da.rename(f"{temp.name}_hi")
+    hi_da.attrs["baseline_variable"] = hi_da.name
     hi_da = add_history(hi_da, f"Converted to heat index using '{rh.name}' relative humidity, renamed from '{temp.name}' to '{hi_da.name}'.\n")
     return hi_da
 
@@ -104,6 +105,7 @@ def format_standard_measures(temp_datasets: list[xarray.DataArray], rh: xarray.D
         temp_ds.attrs |= {
             "hdp_type": "measure",
             "input_variable": temp_ds.name,
+            "baseline_variable": temp_ds.name
         }
         
         temp_ds = convert_temp_units(temp_ds)
