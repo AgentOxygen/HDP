@@ -2,6 +2,7 @@ import xarray
 import numpy as np
 import cftime
 import numba as nb
+import datetime
 from hdp.utils import get_version, add_history
 
 
@@ -210,6 +211,27 @@ def compute_hemisphere_ranges(measure: xarray.DataArray) -> xarray.DataArray:
     north_ranges = get_range_indices(measure.time.values, (5, 1), (10, 1))
     south_ranges = get_range_indices(measure.time.values, (10, 1), (3, 1))
 
+    slice_start = 0
+    slice_end = north_ranges.size
+    start_indentified = False
+    for year_index, n_end_points in enumerate(north_ranges):
+        end_points = np.concat([n_end_points, south_ranges[year_index]])
+        
+        if -1 in end_points and not start_indentified:
+            slice_start = year_index
+            continue
+        elif not start_indentified:
+            start_indentified = True
+
+        if start_indentified and -1 in end_points:
+            slice_end = year_index
+            break
+
+    north_ranges = north_ranges[slice_start:slice_end]
+    south_ranges = south_ranges[slice_start:slice_end]    
+    years = np.arange(measure.time.values[0].year, measure.time.values[-1].year + 1, 1)
+    years = years[slice_start:slice_end]    
+    
     ranges = np.zeros((north_ranges.shape[0], 2, measure.lat.size, measure.lon.size), dtype=int) - 1
 
     for i in range(measure.lat.size):
@@ -218,11 +240,12 @@ def compute_hemisphere_ranges(measure: xarray.DataArray) -> xarray.DataArray:
                 ranges[:, :, i, j] = south_ranges
             else:
                 ranges[:, :, i, j] = north_ranges
+                
 
     return xarray.DataArray(data=ranges,
                             dims=["year", "end_points", "lat", "lon"],
                             coords={
-                                "year": np.arange(measure.time.values[0].year, measure.time.values[-1].year + 1, 1),
+                                "year": years,
                                 "end_points": ["start", "finish"],
                                 "lat": measure.lat.values,
                                 "lon": measure.lon.values
@@ -361,14 +384,11 @@ def compute_individual_metrics(measure: xarray.DataArray, threshold: xarray.Data
     for perc in threshold.percentile.values:
         perc_threshold = threshold.sel(percentile=perc)
         
-        season_ranges = xarray.DataArray(data=compute_hemisphere_ranges(measure),
-                                         dims=["year", "end_points", "lat", "lon"],
-                                         coords={
-                                             "year": np.arange(times[0].year, times[-1].year + 1, 1),
-                                             "end_points": ["start", "finish"],
-                                             "lat": measure.lat.values,
-                                             "lon": measure.lon.values
-                                         })
+        season_ranges = compute_hemisphere_ranges(measure)
+        measure.sel(time=slice(
+            cftime.datetime(year=season_ranges.year.values[0], month=1, day=1, calendar=times[0].calendar),
+            cftime.datetime(year=season_ranges.year.values[-1], month=1, day=1, calendar=times[0].calendar) - datetime.timedelta(days=1)
+        ))
         
         doy_map = xarray.DataArray(
             data=build_doy_map(times),
