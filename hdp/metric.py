@@ -61,7 +61,8 @@ def index_heatwaves(hot_days_ts: np.ndarray, min_duration: int, max_break: int, 
 @nb.njit
 def heatwave_number(hw_ts: np.ndarray, season_ranges: np.ndarray) -> np.ndarray:
     """
-    Summary
+    Measures the number of heatwaves (by event, not days) in each season of a given heatwave index time series.
+    Heatwave metric, commonly abbreviated as HWN.
 
     :param hw_ts: Integer timeseries of indexed heatwave days.
     :type hw_ts: np.ndarray
@@ -80,7 +81,8 @@ def heatwave_number(hw_ts: np.ndarray, season_ranges: np.ndarray) -> np.ndarray:
 @nb.njit
 def heatwave_frequency(hw_ts: np.ndarray, season_ranges: np.ndarray) -> np.ndarray:
     """
-    Summary
+    Measures the number of heatwave days in each season of a given heatwave index time series.
+    Heatwave metric, commonly abbreviated as HWF.
 
     :param hw_ts: Integer timeseries of indexed heatwave days.
     :type hw_ts: np.ndarray
@@ -99,7 +101,8 @@ def heatwave_frequency(hw_ts: np.ndarray, season_ranges: np.ndarray) -> np.ndarr
 @nb.njit
 def heatwave_duration(hw_ts: np.ndarray, season_ranges: np.ndarray) -> np.ndarray:
     """
-    Summary
+    Measures the length of the longest heatwave in each season of a given heatwave index time series.
+    Heatwave metric, commonly abbreviated as HWD.
 
     :param hw_ts: Integer timeseries of indexed heatwave days.
     :type hw_ts: np.ndarray
@@ -133,13 +136,14 @@ def heatwave_duration(hw_ts: np.ndarray, season_ranges: np.ndarray) -> np.ndarra
 @nb.njit
 def heatwave_average(hw_ts: np.ndarray, season_ranges: np.ndarray) -> np.ndarray:
     """
-    Summary
+    Measures the average length of all heatwaves in each season of a given heatwave index time series.
+    Heatwave metric, commonly abbreviated as HWA.
 
     :param hw_ts: Integer timeseries of indexed heatwave days.
     :type hw_ts: np.ndarray
     :param season_ranges: Range of array indices, corresponding to heatwave season, in indexed heatwave day timeseries to count.
     :type season_ranges: np.ndarray
-    :return: Length of longest heatwave per heatwave season.
+    :return: Average heatwave length per heatwave season.
     :rtype: np.ndarray
     """
     output = np.zeros(season_ranges.shape[0], dtype=nb.float64)
@@ -166,9 +170,11 @@ def heatwave_average(hw_ts: np.ndarray, season_ranges: np.ndarray) -> np.ndarray
 
 def get_range_indices(times: np.ndarray, start: tuple, end: tuple) -> np.ndarray:
     """
-    Summary
+    Calculates the range of time indices to define each heatwave season for a given time series.
+    This function is agnostic to the calendar type, but will not yield accurate results if the month and day exceed the calendar's definition.
+    The ranges of indices are then used to slice the time series into the heatwave seasons, this is faster than iterating through CFTime objects.
 
-    :param times: Array of CFTime objects.
+    :param times: Array of CFTime objects corresponding to the time series to define the seasons over.
     :type times: np.ndarray
     :param start: Tuple of starting month integer and day integer to compare times array against.
     :type start: tuple
@@ -201,15 +207,15 @@ def get_range_indices(times: np.ndarray, start: tuple, end: tuple) -> np.ndarray
 
 def compute_hemisphere_ranges(measure: xarray.DataArray) -> xarray.DataArray:
     """
-    Summary
+    Computes the heatwave season ranges by time index (not the timestamp, rather the index corresponding to the timestamp) for each grid cell based on whether it is in the Northern Hemisphere (boreal summer, June 1st to September 1st) or Southern Hemisphere (austral summer, December 1st to March 1st).
 
     :param measure: DataArray containing 'lat' and 'lon' variables corresponding to grid.
     :type measure: xarray.DataArray
-    :return: Generates summer seasonal ranges by hemisphere for an arbitrary 'lat'-'lon' grid.
+    :return: Generates seasonal ranges by hemisphere for an arbitrary 'lat'-'lon' grid.
     :rtype: xarray.DataArray
     """
-    north_ranges = get_range_indices(measure.time.values, (5, 1), (10, 1))
-    south_ranges = get_range_indices(measure.time.values, (10, 1), (3, 1))
+    north_ranges = get_range_indices(measure.time.values, (6, 1), (9, 1))
+    south_ranges = get_range_indices(measure.time.values, (12, 1), (2, 1))
 
     slice_start = 0
     slice_end = north_ranges.size
@@ -254,7 +260,7 @@ def compute_hemisphere_ranges(measure: xarray.DataArray) -> xarray.DataArray:
 
 def build_doy_map(times: np.ndarray) -> np.ndarray:
     """
-    Summary
+    Maps the time series index (key) to its respective day of the year (value).
 
     :param measure: Array of CFTime objects.
     :type measure: np.ndarray
@@ -270,7 +276,7 @@ def build_doy_map(times: np.ndarray) -> np.ndarray:
 @nb.njit
 def indicate_hot_days(measure: np.ndarray, threshold: np.ndarray, doy_map: np.ndarray) -> np.ndarray:
     """
-    Summary
+    Determines whether each time step in a heat measure exceeds the threshold.
 
     :param measure: Heat measure to compare against the threshold.
     :type measure: np.ndarray
@@ -296,7 +302,8 @@ def compute_heatwave_metrics(measure: np.ndarray, threshold: np.ndarray, doy_map
                              min_duration: int, max_break: int, max_subs: int,
                              season_ranges: np.ndarray) -> np.ndarray:
     """
-    Summary
+    Computes HWN, HWF, HWD, and HWA metrics for a given measure, threshold, and definition. Additional parameters can be used to fine tune the analysis.
+    This is the Numba-compiled function that is parallelized with Dask and formatted into a more user-friendly format by hdp.metrics.compute_individual_metrics
 
     :param measure: Heat measure to compare against the threshold.
     :type measure: np.ndarray
@@ -312,7 +319,7 @@ def compute_heatwave_metrics(measure: np.ndarray, threshold: np.ndarray, doy_map
     :type max_subs: int
     :param season_ranges: 
     :type season_ranges: np.ndarray
-    :return: Array of equal number of dimensions to measure and an additional dimension containing each heatwave metric: HWF, HWD, HWN
+    :return: Array of equal number of dimensions to measure and an additional dimension containing each heatwave metric: HWN, HWF, HWD, HWA
     :rtype: np.ndarray
     """
     hot_days_ts = indicate_hot_days(measure, threshold, doy_map)
@@ -349,19 +356,24 @@ def compute_group_metrics(measures: xarray.Dataset, thresholds:xarray.Dataset, h
 
 def compute_individual_metrics(measure: xarray.DataArray, threshold: xarray.DataArray, hw_definitions: list, include_threshold: bool=True, check_variables: bool=True) -> xarray.Dataset:
     """
-    Summary
+    Computes HWN, HWF, HWD, and HWA heatwave metrics for an individual parameter configuration of measure, threshold, and definition.
 
-    :param measure: 
+    Heatwave definitions are described by tuples of three integers in the following order:
+    1. Minimum number of days exceeding the threshold to define the start of a heatwave
+    2. Maximum number of days following the start of a heatwave that do not exceed the threshold and are followed by days that do exceed the threshold. In other words, the maximum "break" that a heatwave can have between the initial hot days and some number of hot days afterwards.
+    3. Maximum number of breaks in a heatwave (can also be thought of as the maximum number of secondary events after the initial hot days).
+
+    :param measure: Formatted HDP measure DataArray
     :type measure: xarray.DataArray
-    :param threshold: 
+    :param threshold: Formatted HDP threshold compatable with the given measure
     :type threshold: xarray.DataArray
-    :param hw_definitions: 
-    :type hw_definitions: list
-    :param include_threshold: 
+    :param hw_definitions: Heatwave definitions to calculate metrics for. See the function description for how to generate definitions.
+    :type hw_definitions: list[tuple]
+    :param include_threshold: (Optional) Whether or not to include the threshold DataArray in the aggregated output dataset. Default is True.
     :type include_threshold: bool
-    :param check_variables: 
+    :param check_variables: (Optional) Whether or not to check if measure is compatable with the threshold. Default is True.
     :type check_variables: bool
-    :return: 
+    :return: Aggregate dataset containing all of the heatwave metrics and optional datasets.
     :rtype: xarray.Dataset
     """
     if check_variables:
@@ -473,25 +485,26 @@ def compute_metrics_io(output_path: str,
                        threshold_path: str,
                        hw_definitions: list,
                        include_threshold: bool=False,
-                       override_threshold_var: str=None):
+                       override_threshold_var: str=None) -> None:
     """
-    Summary
+    Computes heatwave metrics from path inputs instead of manually supplied xarray Datasets/DataArrays (automates reading from and writing to disk).
+    Resulting metrics are written directly to disk instead of holding in memory.
 
-    :param output_path: 
+    :param output_path: Path to write dataset(s) to, can be a zarr store (faster) or netCDF file (slower).
     :type output_path: str
-    :param measure_path: 
+    :param measure_path: Path to heat measure dataset formatted by the HDP.
     :type measure_path: str
-    :param measure_var: 
+    :param measure_var: Name of measure variable to use from specified dataset.
     :type measure_var: str
-    :param threshold_path: 
+    :param threshold_path: Path to threshold dataset formatted by the HDP.
     :type threshold_path: str
-    :param hw_definitions: 
+    :param hw_definitions: Definitions to compute heatwave metrics over.
     :type hw_definitions: list
-    :param include_threshold: 
+    :param include_threshold: (Optional) Whether or not to include the threshold dataset in the resulting output. Default is False.
     :type include_threshold: bool
-    :param override_threshold_var: 
+    :param override_threshold_var: (Optional) Override threshold variable to use when computing metrics. If left unspecified, the format "threshold_{measure_var}" will be used.
     :type override_threshold_var: str
-    :return: 
+    :return: None
     :rtype: None
     """
     output_path = Path(output_path)
@@ -525,7 +538,7 @@ def compute_metrics_io(output_path: str,
     else:
         threshold_data = xarray.open_dataset(threshold_path)[threshold_var]
 
-    metric_ds = compute_metrics(measure_data, threshold_data, hw_definitions, include_threshold=include_threshold, check_variables=check_variables)
+    metric_ds = compute_individual_metrics(measure_data, threshold_data, hw_definitions, include_threshold=include_threshold, check_variables=check_variables)
 
     if output_path.suffix == ".zarr":
         metric_ds.to_zarr(output_path)

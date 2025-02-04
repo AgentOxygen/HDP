@@ -10,14 +10,18 @@ from hdp.utils import add_history, get_version
 
 def datetimes_to_windows(datetimes: np.ndarray, window_radius: int) -> np.ndarray:
     """
-    Calculates sample windows for array indices from the datetime dimension 
+    Generate rolling window sample of the day of year for each time index in the specified time series. Example below:
 
+    Day of year values for datetimes: 1 2 3 4 5 6
+    Window radius: 1
+        -> [6 1 2], [1 2 3], [2 3 4], [3 4 5], [4 5 6], [5 6 1]
+    
 
     :param datetimes: Array of datetime objects corresponding to the dataset's time dimension
     :type datetimes: np.ndarray
-    :param window_radius: Radius of windows to generate
+    :param window_radius: Radius of each window
     :type window_radius: int
-    :return: 
+    :return: Two dimensional array where each index of the first dimension corresponds to the time dimension and the second dimension stores the indices of each window.
     :rtype: np.ndarray
     """
     day_of_yr_to_index = {}
@@ -53,8 +57,7 @@ def datetimes_to_windows(datetimes: np.ndarray, window_radius: int) -> np.ndarra
 )
 def compute_percentiles(temperatures: np.ndarray, window_samples: np.ndarray, percentiles: np.ndarray, output: np.ndarray):
     """
-    Generalized universal function that computes the temperatures for multiple percentiles using sample index windows.
-
+    Generalized universal function that computes the temperatures for multiple percentiles using time index window samples.
 
     :param temperatures: Dataset containing temperatures to compute percentiles from
     :type temperatures: np.ndarray
@@ -64,7 +67,7 @@ def compute_percentiles(temperatures: np.ndarray, window_samples: np.ndarray, pe
     :type percentiles: np.ndarray
     :param output: Array to write percentiles to
     :type output: np.ndarray
-    :return: 
+    :return: None
     :rtype: None
     """
     for doy_index in range(window_samples.shape[0]):
@@ -74,23 +77,24 @@ def compute_percentiles(temperatures: np.ndarray, window_samples: np.ndarray, pe
         output[doy_index] = np.quantile(doy_temps, percentiles)
 
 
-def compute_thresholds(baseline_dataset: list[xarray.DataArray], percentiles: np.ndarray, no_season: bool=False, rolling_window_size: int=7, fixed_value: float=None):
+def compute_thresholds(baseline_dataset: list[xarray.DataArray], percentiles: np.ndarray, no_season: bool=False, rolling_window_size: int=7, fixed_value: float=None) -> xarray.Dataset:
     """
-    Summary
+    Wrapper function for generating multiple thresholds with hdp.threshold.compute_threshold. 
+    Computes percentile and, optionally, fixed value thresholds for a list of baseline measurements.
 
 
-    :param baseline_data:
-    :type baseline_data: xarray.DataArray
-    :param percentiles:
+    :param baseline_data: List of DataArrays with baseline measurements to calculate thresholds from.
+    :type baseline_data: list[xarray.DataArray]
+    :param percentiles: List of percentiles to calculate for each baseline.
     :type percentiles: np.ndarray
-    :param no_season:
+    :param no_season: (Optional) Instead of taking window samples at each day of year to get a seasonally-varying threshold, calculate a single percentile for the entire year. Defaults to False.
     :type no_season: bool
-    :param rolling_window_size:
+    :param rolling_window_size: Size of rolling windows to use when calculating the percentiles.
     :type rolling_window_size: int
-    :param fixed_value:
+    :param fixed_value: Value to use for fixed threshold (non-seasonally varying).
     :type fixed_value: float
-    :return: 
-    :rtype: None
+    :return: Aggregated dataset of all thresholds generated.
+    :rtype: xarray.Dataset
     """
     threshold_datasets = []
     for baseline_data in baseline_dataset:
@@ -98,23 +102,23 @@ def compute_thresholds(baseline_dataset: list[xarray.DataArray], percentiles: np
     return xarray.merge(threshold_datasets)
 
 
-def compute_threshold(baseline_data: xarray.DataArray, percentiles: np.ndarray, no_season: bool=False, rolling_window_size: int=7, fixed_value: float=None):
+def compute_threshold(baseline_data: xarray.DataArray, percentiles: np.ndarray, no_season: bool=False, rolling_window_size: int=7, fixed_value: float=None) -> xarray.Dataset:
     """
-    Summary
+    Computes percentile and, optionally, fixed value thresholds for a baseline measurements.
 
 
-    :param baseline_data:
+    :param baseline_data: DataArrays with baseline measurements to calculate thresholds from.
     :type baseline_data: xarray.DataArray
-    :param percentiles:
+    :param percentiles: List of percentiles to calculate for each baseline.
     :type percentiles: np.ndarray
-    :param no_season:
+    :param no_season: (Optional) Instead of taking window samples at each day of year to get a seasonally-varying threshold, calculate a single percentile for the entire year. Defaults to False.
     :type no_season: bool
-    :param rolling_window_size:
+    :param rolling_window_size: (Optional) Size of rolling windows to use when calculating the percentiles. Defaults to 7.
     :type rolling_window_size: int
-    :param fixed_value:
+    :param fixed_value: (Optional) Value to use for fixed threshold (non-seasonally varying). Defaults to None.
     :type fixed_value: float
-    :return: 
-    :rtype: None
+    :return: Aggregated dataset of all thresholds generated.
+    :rtype: xarray.Dataset
     """
     percentiles = np.array(percentiles)
     
@@ -183,28 +187,28 @@ def compute_threshold_io(baseline_path: str,
                          no_season: bool=False,
                          rolling_window_size: int=7,
                          fixed_value: float=None,
-                         overwrite: bool=False):
+                         overwrite: bool=False) -> None:
     """
-    Summary
+    Computes thresholds from path inputs instead of manually supplied xarray Datasets/DataArrays (automates reading from and writing to disk).
+    Resulting threshold datasets are written directly to disk instead of holding in memory.
 
-
-    :param baseline_path:
+    :param baseline_path: Path to netCDF or zarr store containing baseline measurements to compute thresholds from.
     :type baseline_path: str
-    :param baseline_var:
+    :param baseline_var: Variable read from the dataset at the specified path.
     :type baseline_var: str
-    :param output_path:
+    :param output_path: Path to write dataset(s) to, can be a zarr store (faster) or netCDF file (slower).
     :type output_path: str
-    :param percentiles:
+        :param percentiles: List of percentiles to calculate for each baseline.
     :type percentiles: np.ndarray
-    :param no_season:
+    :param no_season: (Optional) Instead of taking window samples at each day of year to get a seasonally-varying threshold, calculate a single percentile for the entire year. Defaults to False.
     :type no_season: bool
-    :param rolling_window_size:
+    :param rolling_window_size: (Optional) Size of rolling windows to use when calculating the percentiles. Defaults to 7.
     :type rolling_window_size: int
-    :param fixed_value:
+    :param fixed_value: (Optional) Value to use for fixed threshold (non-seasonally varying). Defaults to None.
     :type fixed_value: float
-    :param overwrite:
+    :param overwrite: (Optional) Whether or not to overwrite existing datasets at the output_path. Defaults to False
     :type overwrite: bool
-    :return: 
+    :return: None
     :rtype: None
     """
     output_path = Path(output_path)
