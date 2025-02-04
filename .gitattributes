@@ -1,0 +1,5 @@
+docs/* linguist-documentation
+images/* linguist-documentation
+Demo.ipynb linguist-documentation
+Demo.html linguist-documentation
+prototyping/* linguist-generated
