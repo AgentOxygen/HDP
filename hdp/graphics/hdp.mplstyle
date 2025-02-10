@@ -1,5 +1,5 @@
 figure.figsize: 8.6, 7
-figure.dpi: 150
+figure.dpi: 300
 figure.facecolor: white
 figure.edgecolor: black
 figure.titlesize: 16
