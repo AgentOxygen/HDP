@@ -444,22 +444,22 @@ def compute_individual_metrics(measure: xarray.DataArray, threshold: xarray.Data
     }
 
     ds["HWF"].attrs |= {
-        "units": "days",
+        "units": "heatwave days",
         "long_name": "Heatwave Frequency", 
         "description": "Number of days that fall within heatwave during a heatwave season"
     }
     ds["HWD"].attrs |= {
-        "units": "days", 
+        "units": "heatwave days", 
         "long_name": "Heatwave Duration", 
         "description": "Length of longest heatwave during a heatwave season"
     }
     ds["HWN"].attrs |= {
-        "units": "events", 
+        "units": "heatwave events", 
         "long_name": "Heatwave Number", 
         "description": "Number of distinct heatwaves during a heatwave season"
     }
     ds["HWA"].attrs |= {
-        "units": "events", 
+        "units": "heatwave events", 
         "long_name": "Heatwave Average", 
         "description": "Average length of heatwaves during a heatwave season"
     }
