@@ -27,7 +27,8 @@ dependencies = [
   "zarr",
   "netCDF4",
   "tqdm",
-  "ipywidgets"
+  "ipywidgets",
+  "nbformat"
 ]
 keywords = ["HDP", "heat", "heatwave", "heatwave diagnostics package", "climate", "climate model", "timeseries", "heatwave metrics", "diagnostics"]
 
