@@ -17,3 +17,15 @@ def add_history(ds, msg):
 
 def get_version():
     return version('hdp_python')
+
+
+def get_func_description(func):
+    lines = func.__doc__.split("\n")
+    desc = ""
+    for line in lines:
+        if ":param" in line:
+            break
+        line = line.strip()
+        if line != "":
+            desc += line.strip() + " "
+    return desc
