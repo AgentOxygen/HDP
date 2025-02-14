@@ -1,6 +1,0 @@
-﻿hdp
-===
-
-.. automodule:: hdp
-
-   

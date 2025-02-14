@@ -7,3 +7,6 @@ nc_time_axis
 dask
 zarr
 netCDF4
+tqdm
+ipywidgets
+nbforma

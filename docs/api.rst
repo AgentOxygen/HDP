@@ -7,34 +7,41 @@ API
    :toctree: generated
 
     hdp
-    hdp.measure
-    hdp.metric
-    hdp.threshold
-    hdp.hw_dataset
-    hdp.plotting_functions
-    hdp.cli
-    hdp.utils
+    measure
+    metric
+    threshold
+    cli
+    utils
+    graphics.figure
+    graphics.notebook
+    graphics.winkel_tripel
 
 Measure Functions
--------
+-----------------
 
 .. automodule:: hdp.measure
    :members:
 
 Threshold Functions
--------
+-------------------
 
 .. automodule:: hdp.threshold
    :members:
 
 Metric Functions
--------
+----------------
 
 .. automodule:: hdp.metric
    :members:
 
 Plotting/Graphics Functions
--------
+---------------------------
 
-.. automodule:: hdp.plotting_functions
+.. automodule:: hdp.graphics.figure
+   :members:
+
+.. automodule:: hdp.graphics.notebook
+   :members:
+
+.. automodule:: hdp.graphics.winkel_tripel
    :members:

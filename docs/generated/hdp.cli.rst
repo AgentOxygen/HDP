@@ -1,12 +1,12 @@
-﻿hdp.hdp
+﻿hdp.cli
 =======
 
-.. automodule:: hdp.hdp
+.. automodule:: hdp.cli
 
    
    .. rubric:: Functions
 
    .. autosummary::
    
-      create_notebook
+      main
    
