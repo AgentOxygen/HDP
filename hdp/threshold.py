@@ -14,7 +14,7 @@ def datetimes_to_windows(datetimes: np.ndarray, window_radius: int) -> np.ndarra
 
     Day of year values for datetimes: 1 2 3 4 5 6
     Window radius: 1
-        -> [6 1 2], [1 2 3], [2 3 4], [3 4 5], [4 5 6], [5 6 1]
+    Result: [6 1 2], [1 2 3], [2 3 4], [3 4 5], [4 5 6], [5 6 1]
     
 
     :param datetimes: Array of datetime objects corresponding to the dataset's time dimension
