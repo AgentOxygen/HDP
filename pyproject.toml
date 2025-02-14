@@ -25,7 +25,9 @@ dependencies = [
   "nc_time_axis",
   "dask[complete]",
   "zarr",
-  "netCDF4"
+  "netCDF4",
+  "tqdm",
+  "ipywidgets"
 ]
 keywords = ["HDP", "heat", "heatwave", "heatwave diagnostics package", "climate", "climate model", "timeseries", "heatwave metrics", "diagnostics"]
 
