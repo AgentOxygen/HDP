@@ -9,4 +9,4 @@ zarr
 netCDF4
 tqdm
 ipywidgets
-nbforma
+nbformat
