@@ -120,6 +120,15 @@ def compute_threshold(baseline_data: xarray.DataArray, percentiles: np.ndarray, 
     :return: Aggregated dataset of all thresholds generated.
     :rtype: xarray.Dataset
     """
+    if "member" in baseline_data.dims:
+        member_datasets = []
+        for member in baseline_data.member.values:
+            member_slice = baseline_data.sel(member=member).drop_vars("member")
+            member_datasets.append(member_slice)
+        baseline_data = xarray.concat(member_datasets, dim="time")
+
+    baseline_data = baseline_data.chunk(dict(time=-1)).astype(np.float32)
+    
     percentiles = np.array(percentiles)
     
     rolling_windows_indices = datetimes_to_windows(baseline_data.time.values, rolling_window_size)
