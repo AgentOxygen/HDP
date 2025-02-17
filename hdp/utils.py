@@ -12,6 +12,7 @@ def add_history(ds, msg):
         ds.attrs["history"] += f"({get_time_stamp()}) {msg}\n"
     else:
         ds.attrs["history"] = f"({get_time_stamp()}) History metadata initialized by HDP v{get_version()}.\n"
+        ds.attrs["history"] += f"({get_time_stamp()}) {msg}\n"
     return ds
 
 
