@@ -65,7 +65,7 @@ In addition to datasets which can be saved to disk, the `HDP` includes plotting 
 
 The automatic workflow compiles a "figure deck" containing diagnostic plots for multiple heatwave parameters and input variables. The resulting deck may contain dozens of figures that can be difficult to parse through individually. To simplify this process, figure decks are serialized and stored in a single Jupyter Notebook that is separated into descriptive sections. This allows the user to keep all diagnostic figures in a single Notebook file and navigate through the plots using the Notebook interface. Markdown cells are added to the top of each figure that includes a basic description of the plotting function called and the variables used. The `HDPNotebook` class in `hdp.graphics.notebook` is utilized to facilitate the generation of these Notebooks internally, but can be called through the API as well to buid custom notebooks. Below is an example of what a Notebook of the standard figure deck looks like:
 
-![Example of an HDP standard figure deck](docs/joss/HDP_Notebook_Example.png "HDP Notebook Example")
+![Example of an HDP standard figure deck](HDP_Notebook_Example.png "HDP Notebook Example")
 
 # Ongoing Work
 
