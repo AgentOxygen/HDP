@@ -1,6 +1,9 @@
 name: Draft JOSS PDF
-on: [push]
-
+on:
+  push:
+    paths:
+      - docs/joss/**
+      - .github/workflows/draft-pdf.yml
 jobs:
   paper:
     runs-on: ubuntu-latest
