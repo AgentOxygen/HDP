@@ -1,5 +1,5 @@
 ---
-title: 'Heatwave Diagnostics Package: Computing heatwave metrics over multiple parameters using xarray'
+title: 'Heatwave Diagnostics Package: Efficiently Compute Heatwave Metrics Across Parameter Spaces'
 tags:
   - heat
   - heatwave
@@ -17,72 +17,62 @@ authors:
 affiliations:
  - name: Department of Earth and Planetary Sciences, Jackson School of Geoscience, The University of Texas at Austin, Austin, TX, USA
    index: 1
-date: 23 October 2024
+date: 18 February 2025
 bibliography: paper.bib
 ---
 
 # Summary
-The heatwave diagnostics package (`HDP`) is a Python package that enables users to compute heatwave frequency and duration metrics for output from global climate models across multiple measures of heat, extreme heat thresholds, and heatwave definitions. The `HDP` leverages performance-oriented code using xarray, Dask, and Numba to efficiently process gridded daily datasets while preserving the readability of Python programming. The speed and accessibility of this approach empowers users to generate metrics for a large variety of heatwave types across the parameter space, which may reveal additional insights into the impact of climate forcings on heatwave dynamics and statistics.
+The heatwave diagnostics package (`HDP`) is a Python package that provides the climate research community with tools to compute heatwave metrics for the large volumes of data produced by earth system model large ensembles, across multiple measures of heat, extreme heat thresholds, and heatwave definitions. The `HDP` leverages performance-oriented design using xarray, Dask, and Numba to maximize the use of available hardware resources while maintaining accessibility through an intuitive interface and well-documented user guide. This approach empowers the user to generate metrics for a wide and diverse range of heatwave types across the parameter space.
 
 # Statement of Need
 
-Accurate quantification of the evolution of heatwave trends in climate model output is critical for evaluating future change in patterns of hazard. Metrics such as heatwave frequency and duration are commonly used in hazard assessments, but there are few centralized tools and no universal heatwave criteria for computing them. This has resulted in parameter heterogenity across the literature and has prompted some studies to adopt multiple definitions in an effort to build robustness. The introduction of higher resolution global climate models and large ensembles has further complicated the development of software tools, which have remained mostly specific to individual studies and specific high performance computing systems. Some generalized tools have been developed to address this problem, but do not contain explicit methods for evaluating the potential sensitivities of heatwave hazard to the choices of heat measure, extreme heat threshold, and heatwave definition.
+Accurate quantification of the evolution of heatwave trends in climate model output is critical for evaluating future change in patterns of hazard. The framework for indexing heatwaves by comparing a time-evolving measure of heat against some seasonally-varing percentile threshold is well-established in the literature (@baldwin_temporally_2019; @schoetter_changes_2015; @acero_changes_2024; @argueso_seasonal_2016).
+Metrics such as heatwave frequency and duration are commonly used in hazard assessments, but there are few centralized tools and no universal heatwave criteria for computing them. This has resulted in parameter heterogenity across the literature and has prompted some studies to adopt multiple definitions in an effort to build robustness (@perkins_review_2015). However, many studies rely on only a handful of metrics and definitions due to the excessive data management and computational burden of sampling a greater number of parameters (@perkins_measurement_2013). The introduction of higher resolution global climate models and large ensembles has further complicated the development of software tools, which have remained mostly specific to individual studies and specific high performance computing systems. Some generalized tools have been developed to address this problem, but do not contain explicit methods for evaluating the potential sensitivities of heatwave hazard to the choices of heat measure, extreme heat threshold, and heatwave definition.
 
-Development of the `HDP` was started in 2023 primarily to address the computational obstacles around handling terabyte-scale large ensembles, but quickly evolved to also investigate new scientific questions around how the selection of characteristic heatwave parameters may impact subsequent hazard analysis. By enabling the user to explicitly sample a large combination of parameters, the `HDP` can provide insight into how different characterizations of heatwaves evolve over time and respond to perturbations or forcings.
+Development of the `HDP` was started in 2023 primarily to address the computational obstacles around handling terabyte-scale large ensembles, but quickly evolved to also investigate new scientific questions around how the selection of characteristic heatwave parameters may impact subsequent hazard analysis. By enabling the user to explicitly sample a large combination of parameters, the `HDP` can provide insight into how the spatio-temporal response of heatwaves to climate perturbations and forcings depends on the choice of heatwave parameters (e.g. [heatwave3](https://robwschlegel.github.io/heatwave3/index.html), [xclim](https://xclim.readthedocs.io/en/stable/indices.html), [ehfheatwaves](https://tammasloughran.github.io/ehfheatwaves/)).
 
 # Key Features
 
-## Extension of xarray
-`xarray` is a popular Python package used for geospatial analysis and for working with the netCDF files produced by climate models. The `HDP` workflow is based around `xarray` and seemlessly integrates with `xarray` functionality and operator overloading. By using `xarray.Dataset` as a base class for `HeatwaveDataset` and relying on the data structure of `xarray.DataArray`, the user can easily use the `HDP` to explore the dimensions of the multi-parameter heatwave metrics if they are familiar with the `xarray` library. This also gives the `HDP` the flexibility to work with multidimensional data of various structures. At a minimum, users must ensure their data has a monotonic `time` dimension and geospatial `lat` and `lon` dimensions. Other named dimensions are iterated over and distributed in parallel according to the chunking of the `dask.array` data variables that are natively supported by the `xarray` library.
+## Extension of XArray with Implementations of Dask and Numba
+`xarray` is a popular Python package used for geospatial analysis and for working with the netCDF files produced by climate models. The `HDP` workflow is based around `xarray` and seemlessly integrates with the `xarray.DataArray` data structure. By utilizing this well-adopted framework, we increase the ease of use and portability of this package. Parallelization of `HDP` functions is achieved through the integeration of `dask` with automated chunking and task-graph construction features that are built into the `xarray` library. Calculations are computed per-grid-cell and compatable with any spatial configuration so long as it is defined by some latitude and longitude.
+
+The boost in computational performance the `HDP` offers over other heatwave diagnostic tools comes from the combination of `dask` and `numba`. The `dask` Python package provides an interface through which `xarray.DataArray` chunks are assigned to task-graphs and then be dispatched across a cluster. The `dask` library handles many different job-dispatchers and can conform to many different types of distributed-computing systems. This ensures the `HDP` can be used on a variety of high performance computers and supercomputing clusters.
+
+The `numba` Python package converts pure Python code and `numpy` function calls into compiled machine code which can be executed much more quickly than the standard Python interpreter. By writing the core heatwave-indexing and heatwave metric algorithms in Python and using `numba` to convert them to machine code, we preserve the readability of the Python syntax while dramatically increasing the computational efficiency of these algorithms both in terms of speed and memory overhead. We then pass these `numba`-compiled functions to the `dask` cluster for execution in parallel to leverge these improvements at scale.
 
 ## Heatwave Metrics for Multiple Measures, Thresholds, and Definitions
-Fundamental heatwave statistics (frequency of heatwave days, duration of longest heatwave, and number of heatwave events) can easily be computed for heatwave parameters simultaneously using the `HeatwaveDataset` class or multiple functions within the API. The parameters made available to the user are defined as follows:
 
-<!---
-I plan to change the way thresholds are stored in the dataset to allow for more flexibility.
-New user configuration options for the thresholds still need to be implmented, but this is just
-a matter of disabling parts of the current threshold generation process (for example, fixed just
-fills the array with one value).
--->
+The "heatwave parameter space" refers to the span of measures, thresholds, and definitions that define individual heatwave "types."
 
-| Parameter | Definition | Examples |
+| Parameter | Description | Example |
 |----------|------------|---------|
-| Measure | The variable used to quantify heat. | Daily minimum or maximum temperature, heat index, excess heat factor, etc. |
+| Measure | The daily variable used to quantify heat. | Average temperature, minimum temperature, maximum temperature, heat index, etc. |
 | Threshold | The minimum value of heat measure that indicates a "hot day." This can be a fixed value or a percentile derived from a baseline dataset. The threshold can be constant or change relative to the day of year and/or location. | 90th percentile temperature for each day of the year derived from observed temperatures from 1961 to 1990. |
 | Definition | The pattern of hot days that constitutes a heatwave, described as a three number code. | "3-0-0" (three day heatwaves), "3-1-1" (three day heatwaves with possible one day breaks) |
 
-The `HeatwaveDataset` natively supports minimum temperature, maximum temperature, average temperature, and heat index (which can be optionally computed if relative humidity is provided). However, the API supports any variable, regardless of units or structure. Metrics are computed yearly, but may only evaluate a particular time window within each year, hereafter refered to as a "heatwave season." This allows the user to isolate their analysis to heatwaves that occur during particular seasons, such as the summer, and can vary spatially at the grid-cell level. The API supports full customization of the heatwave seasonal definition and has a pre-defined window that isolates metrics to assess only the summer months for the North and South hemispheres separately. A new dimension is created for each of the three parameter types with coordinates that can span multiple values. The computed thresholds and three heatwave metrics are stored within the dataset as `xarray.DataArray` variables:
+Heatwave studies are often based on a limited selection of these parameters (often only one threshold and definition are used). The `HDP` allows the user to test a range of parameter values: heatwaves that exceed 90th, 91st, ... 99th percentile thresholds for 3-day, 4-day, ... 7-day heatwaves. The multidimensional output produced by this sampling is elgantly stored in `xarray.DataArray` structures that can be indexed and sliced for further analysis. Four heatwave metrics that evaluate the temporal patterns in each grid cell are calculated for each measure and aggregated into an `xarray.Dataset`.
 
-<!---
-HWN and season_bnds are not current output by the HDP, but are calculated (just not stored).
--->
+| Metric | Long Name | Units | Description |
+|----------|------------|---------|---------|
+| HWF | heatwave frequency | days | The number of heatwave days per heatwave season. |
+| HWN | heatwave number | events | The number of heatwaves per heatwave season. |
+| HWA | heatwave average | days | The average length of heatwaves per heatwave season. |
+| HWD | heatwave duration | days | The length of the longest heatwave per heatwave season. |
 
-| Variable | Definition |
-|----------|------------|
-| threshold | The computed minimum values needed to constitute a hot day on each day of the year. |
-| HWF | "Heatwave Frequency" measures the number of days per season that make up heatwaves. |
-| HWD | "Heatwave Duration" measures the length, in days, of the longest heatwave each season. |
-| HWN | "Heatwave Number" measures the number of heatwave events per season. |
-| season_bnds | The heatwave season window that metrics are computed over, defined by day of year boundaries. |
+## Diagnostic Notebooks and Figures
 
-## Streamlined Computation in Parallel
+In addition to datasets which can be saved to disk, the `HDP` includes plotting functions and figure decks that summarize various metric diagnostics. These diagnostic plots are designed to give quick insight into potential differences in metric patterns between heatwave parameters. All figure-generating functions return instances of the `matplotlib.figure.Figure` class, allowing the user to modify the attributes and features of the existing plot or add additional features. These functions are contained within the `hdp.graphics` module which can be executed automatically through the full `HDP` workflow or imported by the user to create custom workflows.
 
-<!---
-I still need to test the serial version of the HDP.
--->
+The automatic workflow compiles a "figure deck" containing diagnostic plots for multiple heatwave parameters and input variables. The resulting deck may contain dozens of figures that can be difficult to parse through individually. To simplify this process, figure decks are serialized and stored in a single Jupyter Notebook that is separated into descriptive sections. This allows the user to keep all diagnostic figures in a single Notebook file and navigate through the plots using the Notebook interface. Markdown cells are added to the top of each figure that includes a basic description of the plotting function called and the variables used. The `HDPNotebook` class in `hdp.graphics.notebook` is utilized to facilitate the generation of these Notebooks internally, but can be called through the API as well to buid custom notebooks. Below is an example of what a Notebook of the standard figure deck looks like:
 
-The creation of heatwave thresholds and definitions is streamlined through the use of the `HeatwaveDataset` class which handles all user inputs. The class is an extension of the `xarray.Dataset` class with custom plotting functions to allow the user to quickly generate summary figures. The core algorithms are compiled using Numba to maximize computational speed and scaled using parallelism through Dask to handle large datasets. Note that while the `HDP` lists Dask as a required dependency, the user does not necessarily need to have access to a Dask cluster to run it.
-
-## Readability of Core Algorithms
-
-Heatwave algorithms have complex source code that is difficult to understand. The `HDP` algorithms used to generate thresholds, identify heatwave days, and compute heatwave metrics are written as one-dimensional time series functions to promote scientific transparency and software extensibility. Unit tests are also included with example test cases. 
+![Example of an HDP standard figure deck](HDP_Notebook_Example.png "HDP Notebook Example")
 
 # Ongoing Work
 
-Several studies that demonstrate the utility of the `HDP` are ongoing and awaiting publication. 
+This package was used to produce the results featured in "Anthropogenic aerosol changes disproportionately impact the evolution of global heatwave hazard and exposure" by Dr. Geeta Persad, Cameron Cummins and Dr. Jane Baldwin, submitted to Environmental Research Letters in 2024. Updates to the `HDP` are ongoing and include, but are not limited to, adding new diagnostic plotting functions and developing heatwave metrics that measure spatial patterns. Additionally, we are planning to integrate this diagnostic package with the CESM Unified Post-Processing and Diagnostics suite (CUPiD) being developed by the National Center for Atmospheric Research.
 
 # Acknowledgements
 
-This work was supported and made possible by funding from the Jackon School of Geosciences at the University of Texas at Austin.
+We thank Dr. Tammas Loughran, Dr. Jane Baldwin, and Dr. Sarah Perkins-Kirkpatrick for their work on developing the initial Python software and heatwave analysis framework that inspired this project. Dr. Loughran's Python package is available on [GitHub](https://tammasloughran.github.io/ehfheatwaves/). This work is partially supported by the Modeling, Analysis, Predictions and Projections Award Program under the National Oceanic and Atmospheric Administration (Award Number NA23OAE4310601).
 
 # References
