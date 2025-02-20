@@ -27,9 +27,18 @@ The HDP can be installed using PyPI. You can view the webpage `here <https://pyp
 
    $ pip install hdp-python
 
+
+Quick Start
+-----------
+Below is example code that computes heatwave metrics for multiple measures, thresholds, and definitions. Hheatwave metrics are obtained for the test dataset by comparing against the thresholds generated from the baseline dataset.
+
+.. code-block:: python
+
+    
+
 Example 1: Generating Heatwave Diagnostics
 ------------------------------------------
-The Regional Aerosol Model Intercomparison Project (RAMIP) is a multi-model large ensemble of earth system model experiments conducted to quantify the role of regional aerosol emissions changes in near-term climate change projections (`Wilcox et al., 2023 <https://gmd.copernicus.org/articles/16/4451/2023/>`_). For the sake of simplicity, we will only investigate CESM2 (one of the 8 models available in this MIP) for this example. For CESM2, there are 10 ensemble members for each of the six model experiments. Each experiment is essentially a different emission scenario where regional aerosol emissions are held constant over different parts of the globe. In this first example, we will produce heatwave metrics for one emission scenario, namely SSP3-7.0. In :ref:`Example 2: RAMIP Analysis <example_2>`, we will explore how comparing the heatwave parameter spaces from two different scientific experiments can generate insightful analysis.
+The Regional Aerosol Model Intercomparison Project (RAMIP) is a multi-model large ensemble of earth system model experiments conducted to quantify the role of regional aerosol emissions changes in near-term climate change projections (`Wilcox et al., 2023 <https://gmd.copernicus.org/articles/16/4451/2023/>`_). For the sake of simplicity, we will only investigate CESM2 (one of the 8 models available in this MIP) for this example. For CESM2, there are 10 ensemble members for each of the six model experiments. Each experiment is essentially a different emission scenario where regional aerosol emissions are held constant over different parts of the globe. We will use a historical simulation from 1960 to 1970 run produced by CESM2 from the same ensemble as the baseline for calculating the extreme heat threshold. In this first example, we will produce heatwave metrics for one emission scenario, namely SSP3-7.0. In :ref:`Example 2: RAMIP Analysis <example_2>`, we will explore how comparing the heatwave parameter spaces from two different scientific experiments can generate insightful analysis.
 
 For this first analysis, we will explore the following set of heatwave parameters:
 
@@ -40,7 +49,7 @@ For this first analysis, we will explore the following set of heatwave parameter
    * - Parameter
      - Range/Values
    * - Measures
-     - tavg, tmin, tmax, tavg_hi, tmin_hi, tmax_hi
+     - tas, tasmax, tas_hi, tasmax_hi,
    * - Thresholds
      - [0.9, 0.91, ... 0.99]
    * - Definitions
@@ -65,10 +74,43 @@ To fully utilize the performance enhancments offered by the HDP, we must first s
     client = Client(cluster)
 
 
-Once a Dask cluster is initialized, we then need to organize our data into `xarray.DataArray <https://docs.xarray.dev/en/stable/generated/xarray.DataArray.html>`_ objects. The entire HDP is built around xarray data structures to ensure ease of use and remain agnostic to input file types. Since we are working with a large ensemble, we need to make sure to concatenate the ensemble members along a "member" dimension. If we weren't using a large ensemble (a single long-running simulation for example), we would just omit this step. To read data from disk, we can use the `xarray.open_mfdataset <https://docs.xarray.dev/en/stable/generated/xarray.open_mfdataset.html>`_ function:
+Once a Dask cluster is initialized, we then need to organize our data into `xarray.DataArray <https://docs.xarray.dev/en/stable/generated/xarray.DataArray.html>`_ objects. The entire HDP is built around xarray data structures to ensure ease of use and remain agnostic to input file types. Since we are working with a large ensemble, we need to make sure to concatenate the ensemble members along a "member" dimension. If we weren't using a large ensemble (a single long-running simulation for example), we would just omit this step. To read data from disk, we can use the `xarray.open_mfdataset <https://docs.xarray.dev/en/stable/generated/xarray.open_mfdataset.html>`_ function. Reading and post-processing data will look different from system to system, but the final format should be the same. Below is a list of xarray.DataArrays with the data structure for baseline_tasmax dataset visualized below:
 
+.. code-block:: python
 
+    baseline_tasmax
+    baseline_rh
+    ssp370_tasmax
+    ssp370_rh
+    
+    baseline_tasmax
 
+.. image:: assets/tasmax_dataarray_example.png
+   :width: 600
+
+The spatial coordinates for latitude and longitude should be named "lat" and "lon" respectively. The "time" coordinates should be decoded into CFTime objects and a "member" dimension should be created if an ensemble is being used.
+
+To begin, we first need to format these measures so that they are in the correct units. This process will also compute heat index values using the relative humidity (rh) datasets.
+
+.. code-block:: python
+
+    baseline_measures = hdp.measure.format_standard_measures(temp_datasets=[baseline_tasmax], rh=baseline_rh)
+    ssp370_measures = hdp.measure.format_standard_measures(temp_datasets=[ssp370_tasmax], rh=ssp370_rh)
+
+Now we can generate our range of thresholds:
+
+.. code-block:: python
+
+    percentiles = np.arange(0.9, 1.0, 0.01)
+    thresholds = hdp.threshold.compute_thresholds(
+        [baseline_measures["tasmax"], baseline_measures["tasmax_hi"]],
+        percentiles
+    )
+
+The DataArray structure is visualized below:
+
+.. image:: assets/threshold_dataarray_example.png
+   :width: 600
 
 :ref:`example_2`
 Example 2: RAMIP Analysis
