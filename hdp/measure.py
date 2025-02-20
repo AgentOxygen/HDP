@@ -58,7 +58,7 @@ def celsius_to_fahrenheit(temp: float) -> float:
     return temp
     
 
-@nb.njit
+@nb.vectorize([nb.float32(nb.float32, nb.float32)])
 def heat_index(temp: float, rel_humid: float) -> float:
     """
     Calculates heat index from temperature and relative humidity.
@@ -94,6 +94,20 @@ def heat_index(temp: float, rel_humid: float) -> float:
     return hi
 
 
+def heat_index_map_wrapper(ds):
+    hi_da = xarray.apply_ufunc(heat_index,
+                               ds["temp"].astype(np.float32),
+                               ds["rh"].astype(np.float32),
+                               dask="parallelized",
+                               input_core_dims=[[], []],
+                               output_core_dims=[[]],
+                               output_dtypes=[float],
+                               dask_gufunc_kwargs={
+                                   'allow_rechunk': False
+                               })
+    return hi_da
+
+
 def apply_heat_index(temp: xarray.DataArray, rh: xarray.DataArray) -> xarray.DataArray:
     """
     Calculates heat index from temperature and relative humidity DataArrays leveraging Dask.
@@ -107,12 +121,14 @@ def apply_heat_index(temp: xarray.DataArray, rh: xarray.DataArray) -> xarray.Dat
     """
     assert temp.attrs["units"] == "degF"
     assert rh.attrs["units"] == "%"
-    hi_da = xarray.apply_ufunc(heat_index, temp, rh,
-                               vectorize=True, dask="parallelized",
-                               input_core_dims=[[], []],
-                               output_core_dims=[[]],
-                               output_dtypes=[float])
-    hi_da.attrs = temp.attrs
+    hi_da = xarray.map_blocks(
+        heat_index_map_wrapper,
+        xarray.Dataset({
+            "temp": temp,
+            "rh": rh
+        }),
+        template=temp
+    )
     hi_da = hi_da.rename(f"{temp.name}_hi")
     hi_da.attrs["baseline_variable"] = hi_da.name
     hi_da = add_history(hi_da, f"Converted to heat index using '{rh.name}' relative humidity, renamed from '{temp.name}' to '{hi_da.name}'.")
@@ -149,7 +165,7 @@ def format_standard_measures(temp_datasets: list[xarray.DataArray], rh: xarray.D
     measures = []
 
     for temp_ds in temp_datasets:
-        temp_ds = temp_ds.copy(deep=True)
+        temp_ds = temp_ds.copy(deep=True).astype(np.float32)
         assert "units" in temp_ds.attrs, f"Attribute 'units' not found in '{temp_ds.name}' dataset."
         assert temp_ds.attrs["units"] in TEMPERATURE_UNITS, f"Units for '{temp_ds.name}' must be one of the following: {TEMPERATURE_UNITS}"
         temp_ds.attrs |= {
@@ -162,7 +178,7 @@ def format_standard_measures(temp_datasets: list[xarray.DataArray], rh: xarray.D
         measures.append(temp_ds)
 
     if rh is not None:
-        rh = rh.copy(deep=True)
+        rh = rh.copy(deep=True).astype(np.float32)
         assert "units" in rh.attrs, "Attribute 'units' not found in rh dataset."
         assert rh.attrs["units"] in HUMIDITY_UNITS, f"Units for rh must be one of the following: {HUMIDITY_UNITS}"
 
