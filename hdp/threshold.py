@@ -141,17 +141,26 @@ def compute_threshold(baseline_data: xarray.DataArray, percentiles: np.ndarray, 
 
     percentiles = xarray.DataArray(data=percentiles,
                                    coords={"percentile": percentiles})
-    
-    threshold_da = xarray.apply_ufunc(compute_percentiles,
-                                      baseline_data,
-                                      rolling_windows,
-                                      percentiles,
-                                      dask="parallelized",
-                                      input_core_dims=[["time"], ["doy", "t_index"], ["percentile"]],
-                                      output_core_dims=[["doy", "percentile"]],
-                                      keep_attrs="override")
 
-    
+    threshold_datas = []
+    for perc in percentiles:
+        percentile_da = xarray.DataArray(data=[perc],
+                                         coords={"percentile": [perc]})
+        
+        threshold_da = xarray.apply_ufunc(compute_percentiles,
+                                          baseline_data,
+                                          rolling_windows,
+                                          percentile_da,
+                                          dask="parallelized",
+                                          input_core_dims=[["time"], ["doy", "t_index"], ["percentile"]],
+                                          output_core_dims=[["doy", "percentile"]],
+                                          keep_attrs="override",
+                                          dask_gufunc_kwargs={
+                                              'allow_rechunk': False
+                                          })
+        threshold_datas.append(threshold_da)
+        
+    threshold_da = xarray.concat(threshold_datas, dim="percentile")
     
     add_history(threshold_da, f"Threshold data computed by HDP v{get_version()}.\n")
     if "long_name" in threshold_da.attrs:
