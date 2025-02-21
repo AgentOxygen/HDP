@@ -94,20 +94,6 @@ def heat_index(temp: float, rel_humid: float) -> float:
     return hi
 
 
-def heat_index_map_wrapper(ds):
-    hi_da = xarray.apply_ufunc(heat_index,
-                               ds["temp"].astype(np.float32),
-                               ds["rh"].astype(np.float32),
-                               dask="parallelized",
-                               input_core_dims=[[], []],
-                               output_core_dims=[[]],
-                               output_dtypes=[float],
-                               dask_gufunc_kwargs={
-                                   'allow_rechunk': False
-                               })
-    return hi_da
-
-
 def apply_heat_index(temp: xarray.DataArray, rh: xarray.DataArray) -> xarray.DataArray:
     """
     Calculates heat index from temperature and relative humidity DataArrays leveraging Dask.
@@ -122,11 +108,9 @@ def apply_heat_index(temp: xarray.DataArray, rh: xarray.DataArray) -> xarray.Dat
     assert temp.attrs["units"] == "degF"
     assert rh.attrs["units"] == "%"
     hi_da = xarray.map_blocks(
-        heat_index_map_wrapper,
-        xarray.Dataset({
-            "temp": temp,
-            "rh": rh
-        }),
+        heat_index,
+        obj=temp,
+        args=[rh],
         template=temp
     )
     hi_da = hi_da.rename(f"{temp.name}_hi")
