@@ -5,6 +5,7 @@ import numba as nb
 import datetime
 from hdp.utils import get_version, add_history
 from tqdm.auto import tqdm
+import dask.array as da
 
 
 @nb.njit
@@ -243,7 +244,7 @@ def compute_hemisphere_ranges(measure: xarray.DataArray) -> xarray.DataArray:
 
     for i in range(measure.lat.size):
         for j in range(measure.lon.size):
-            if i < ranges.shape[2] / 2:
+            if measure.lat.values[i] < 0:
                 ranges[:, :, i, j] = south_ranges
             else:
                 ranges[:, :, i, j] = north_ranges
@@ -338,21 +339,32 @@ def compute_heatwave_metrics(measure: np.ndarray, threshold: np.ndarray, doy_map
     return output
 
 
-def compute_group_metrics(measures: xarray.Dataset, thresholds:xarray.Dataset, hw_definitions: list, include_threshold: bool=False, check_variables: bool=True) -> xarray.Dataset:
-    metric_sets = []
-    for measure_name in list(measures.keys()):
-        measure = measures[measure_name]
-        for threshold_name in list(thresholds.keys()):
-            threshold = thresholds[threshold_name]
-            if threshold.attrs["baseline_variable"] == measure.attrs["baseline_variable"]:
-                hw_metrics = compute_individual_metrics(measure, threshold, hw_definitions, include_threshold, check_variables)
-                var_renames = {name:f"{measure_name}.{threshold_name}.{name}" for name in list(hw_metrics.keys())}
-                metric_sets.append(hw_metrics.rename(var_renames))
+def compute_heatwave_metrics_wrapper(measure, threshold, doy_map, hw_definitions):
+    season_ranges = compute_hemisphere_ranges(measure)
 
-    aggr_ds = xarray.merge(metric_sets)
-    aggr_ds.attrs["variable_naming_desc"] = "(heat measure).(threshold used).(heatwave metric)"
-    aggr_ds.attrs["variable_naming_delimeter"] = "."
-    return aggr_ds
+    def_coords = xarray.DataArray(
+        [f"{hw_def[0]}-{hw_def[1]}-{hw_def[2]}" for hw_def in hw_definitions],
+        dims=["definition"]
+    )
+    perc_coords = xarray.DataArray(
+        threshold.percentile.values,
+        dims=["percentile"]
+    )
+
+    perc_datasets = []
+    for perc in threshold.percentile.values:
+        def_datasets = []
+        for hw_def in hw_definitions:
+            metric_data = xarray.apply_ufunc(compute_heatwave_metrics, measure, threshold.sel(percentile=perc), doy_map,
+                                             hw_def[0], hw_def[1], hw_def[2],
+                                             season_ranges,
+                                             vectorize=True, dask="parallelized",
+                                             input_core_dims=[["time"], ["doy"], ["time"], [], [], [], ["year", "end_points"]],
+                                             output_core_dims=[["metric", "year"]],
+                                             output_dtypes=[int], dask_gufunc_kwargs=dict(output_sizes=dict(metric=4)))
+            def_datasets.append(metric_data)
+        perc_datasets.append(xarray.concat(def_datasets, dim=def_coords))
+    return xarray.concat(perc_datasets, dim=perc_coords)
 
 
 def compute_individual_metrics(measure: xarray.DataArray, threshold: xarray.DataArray, hw_definitions: list, include_threshold: bool=True, check_variables: bool=True) -> xarray.Dataset:
@@ -390,50 +402,59 @@ def compute_individual_metrics(measure: xarray.DataArray, threshold: xarray.Data
     for entry in threshold.attrs["history"].split("\n"):
         if entry != '':
             combined_history += (f"(Threshold) {entry}\n")
-    
-    percentile_datasets = []
-    times = measure.time.values
-    
-    for perc in threshold.percentile.values:
-        perc_threshold = threshold.sel(percentile=perc)
-        
-        season_ranges = compute_hemisphere_ranges(measure)
-        measure.sel(time=slice(
-            cftime.datetime(year=season_ranges.year.values[0], month=1, day=1, calendar=times[0].calendar),
-            cftime.datetime(year=season_ranges.year.values[-1], month=1, day=1, calendar=times[0].calendar) - datetime.timedelta(days=1)
-        ))
-        
-        doy_map = xarray.DataArray(
-            data=build_doy_map(times),
-            coords={"time": times}
-        )
-        
-        definition_datasets = []
-        for hw_def in hw_definitions:
-            metric_data = xarray.apply_ufunc(compute_heatwave_metrics, measure, perc_threshold, doy_map,
-                                             hw_def[0], hw_def[1], hw_def[2],
-                                             season_ranges,
-                                             vectorize=True, dask="parallelized",
-                                             input_core_dims=[["time"], ["doy"], ["time"], [], [], [], ["year", "end_points"]],
-                                             output_core_dims=[["metric", "year"]],
-                                             output_dtypes=[int], dask_gufunc_kwargs=dict(output_sizes=dict(metric=4)))
-            definition_datasets.append(xarray.Dataset(
-                dict(
-                    HWF=metric_data.sel(metric=0),
-                    HWN=metric_data.sel(metric=1),
-                    HWD=metric_data.sel(metric=2),
-                    HWA=metric_data.sel(metric=3),
-                ),
-                coords=dict(
-                    definition=f"{hw_def[0]}-{hw_def[1]}-{hw_def[2]}"
-                )
-            ))
-        percentile_datasets.append(xarray.concat(definition_datasets, dim="definition"))
 
-    if include_threshold:
-        ds = xarray.merge([threshold, xarray.concat(percentile_datasets, dim="percentile")])
-    else:
-        ds = xarray.concat(percentile_datasets, dim="percentile")
+    season_ranges = compute_hemisphere_ranges(measure)
+
+    times = measure.time.values   
+    doy_map = xarray.DataArray(
+        data=build_doy_map(times),
+        coords={"time": times}
+    )
+
+    da_dims = ["percentile", "definition"]
+    da_shape = [threshold.percentile.size, len(hw_definitions)]
+    da_chunks = [(threshold.percentile.size), (len(hw_definitions))]
+
+    for index, dim in enumerate(measure.dims):
+        if dim != "time":
+            da_dims.append(dim)
+            da_shape.append(measure.shape[index])
+            da_chunks.append(measure.chunks[index])
+    
+    da_dims.extend(["metric", "year"])
+    da_shape.extend([4, season_ranges.year.size])
+    da_chunks.extend([(4), (season_ranges.year.size)])
+    
+    da_coords = {**measure.coords}
+    da_coords.pop("time", None)
+    da_coords["year"] = season_ranges.year.values
+    da_coords["definition"] = [f"{hw_def[0]}-{hw_def[1]}-{hw_def[2]}" for hw_def in hw_definitions]
+    da_coords["percentile"] = threshold.percentile.values
+
+    template = xarray.DataArray(
+        da.random.random(da_shape, chunks=da_chunks),
+        dims=da_dims,
+        coords=da_coords
+    )
+
+    metric_data = xarray.map_blocks(
+        compute_heatwave_metrics_wrapper,
+        obj=measure,
+        args=[threshold, doy_map],
+        kwargs={
+            "hw_definitions": hw_definitions,
+        },
+        template=template
+    )
+
+    ds = xarray.Dataset(
+        dict(
+            HWF=metric_data.sel(metric=0),
+            HWN=metric_data.sel(metric=1),
+            HWD=metric_data.sel(metric=2),
+            HWA=metric_data.sel(metric=3)
+        )
+    )
     
     start_ts = cftime.datetime(ds.year[0], 1, 1, calendar=measure.time.values[0].calendar)
     end_ts = cftime.datetime(ds.year[-1], 1, 1, calendar=measure.time.values[0].calendar)
@@ -479,6 +500,23 @@ def compute_individual_metrics(measure: xarray.DataArray, threshold: xarray.Data
         add_history(ds[variable], f"Heatwave metrics generated by HDP v{get_version()}")
     
     return ds
+
+
+def compute_group_metrics(measures: xarray.Dataset, thresholds:xarray.Dataset, hw_definitions: list, include_threshold: bool=False, check_variables: bool=True) -> xarray.Dataset:
+    metric_sets = []
+    for measure_name in list(measures.keys()):
+        measure = measures[measure_name]
+        for threshold_name in list(thresholds.keys()):
+            threshold = thresholds[threshold_name]
+            if threshold.attrs["baseline_variable"] == measure.attrs["baseline_variable"]:
+                hw_metrics = compute_individual_metrics(measure, threshold, hw_definitions, include_threshold, check_variables)
+                var_renames = {name:f"{measure_name}.{threshold_name}.{name}" for name in list(hw_metrics.keys())}
+                metric_sets.append(hw_metrics.rename(var_renames))
+
+    aggr_ds = xarray.merge(metric_sets)
+    aggr_ds.attrs["variable_naming_desc"] = "(heat measure).(threshold used).(heatwave metric)"
+    aggr_ds.attrs["variable_naming_delimeter"] = "."
+    return aggr_ds
 
 
 def compute_metrics_io(output_path: str,
