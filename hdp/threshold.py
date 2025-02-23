@@ -6,6 +6,7 @@ from os.path import isdir
 from os import makedirs
 from pathlib import Path
 from hdp.utils import add_history, get_version
+import dask.array as da
 
 
 def datetimes_to_windows(datetimes: np.ndarray, window_radius: int) -> np.ndarray:
@@ -77,29 +78,19 @@ def compute_percentiles(temperatures: np.ndarray, window_samples: np.ndarray, pe
         output[doy_index] = np.quantile(doy_temps, percentiles)
 
 
-def compute_thresholds(baseline_dataset: list[xarray.DataArray], percentiles: np.ndarray, no_season: bool=False, rolling_window_size: int=7, fixed_value: float=None) -> xarray.Dataset:
-    """
-    Wrapper function for generating multiple thresholds with hdp.threshold.compute_threshold. 
-    Computes percentile and, optionally, fixed value thresholds for a list of baseline measurements.
-
-
-    :param baseline_data: List of DataArrays with baseline measurements to calculate thresholds from.
-    :type baseline_data: list[xarray.DataArray]
-    :param percentiles: List of percentiles to calculate for each baseline.
-    :type percentiles: np.ndarray
-    :param no_season: (Optional) Instead of taking window samples at each day of year to get a seasonally-varying threshold, calculate a single percentile for the entire year. Defaults to False.
-    :type no_season: bool
-    :param rolling_window_size: Size of rolling windows to use when calculating the percentiles.
-    :type rolling_window_size: int
-    :param fixed_value: Value to use for fixed threshold (non-seasonally varying).
-    :type fixed_value: float
-    :return: Aggregated dataset of all thresholds generated.
-    :rtype: xarray.Dataset
-    """
-    threshold_datasets = []
-    for baseline_data in baseline_dataset:
-        threshold_datasets.append(compute_threshold(baseline_data, percentiles, no_season, rolling_window_size, fixed_value))
-    return xarray.merge(threshold_datasets)
+def compute_percentiles_wrapper(baseline_data, rolling_windows, percentiles):
+    threshold_da = xarray.apply_ufunc(compute_percentiles,
+                                      baseline_data,
+                                      rolling_windows,
+                                      percentiles,
+                                      dask="parallelized",
+                                      input_core_dims=[["time"], ["doy", "t_index"], ["percentile"]],
+                                      output_core_dims=[["doy", "percentile"]],
+                                      keep_attrs="override",
+                                      dask_gufunc_kwargs={
+                                          'allow_rechunk': False
+                                      })
+    return threshold_da
 
 
 def compute_threshold(baseline_data: xarray.DataArray, percentiles: np.ndarray, no_season: bool=False, rolling_window_size: int=7, fixed_value: float=None) -> xarray.Dataset:
@@ -132,7 +123,7 @@ def compute_threshold(baseline_data: xarray.DataArray, percentiles: np.ndarray, 
     percentiles = np.array(percentiles)
     
     rolling_windows_indices = datetimes_to_windows(baseline_data.time.values, rolling_window_size)
-    rolling_windows_coords ={
+    rolling_windows_coords = {
         "doy": np.arange(rolling_windows_indices.shape[0]),
         "t_index": np.arange(rolling_windows_indices.shape[1])
     }
@@ -142,26 +133,41 @@ def compute_threshold(baseline_data: xarray.DataArray, percentiles: np.ndarray, 
     percentiles = xarray.DataArray(data=percentiles,
                                    coords={"percentile": percentiles})
 
-    threshold_datas = []
-    for perc in percentiles:
-        percentile_da = xarray.DataArray(data=[perc],
-                                         coords={"percentile": [perc]})
-        
-        threshold_da = xarray.apply_ufunc(compute_percentiles,
-                                          baseline_data,
-                                          rolling_windows,
-                                          percentile_da,
-                                          dask="parallelized",
-                                          input_core_dims=[["time"], ["doy", "t_index"], ["percentile"]],
-                                          output_core_dims=[["doy", "percentile"]],
-                                          keep_attrs="override",
-                                          dask_gufunc_kwargs={
-                                              'allow_rechunk': False
-                                          })
-        threshold_datas.append(threshold_da)
-        
-    threshold_da = xarray.concat(threshold_datas, dim="percentile")
+    da_dims = []
+    da_shape = []
+    da_chunks = []
     
+    for index, dim in enumerate(baseline_data.dims):
+        if dim != "time":
+            da_dims.append(dim)
+            da_shape.append(baseline_data.shape[index])
+            da_chunks.append(baseline_data.chunks[index])
+
+    da_dims.extend(["doy", "percentile"])
+    da_shape.extend([rolling_windows_indices.shape[0], percentiles.values.size])
+    da_chunks.extend([(rolling_windows_indices.shape[0]), (percentiles.values.size)])
+    
+    
+    da_coords = {coord: baseline_data.coords[coord] for coord in baseline_data.coords if coord != "time"}
+    da_coords["doy"] = np.arange(rolling_windows_indices.shape[0])
+    da_coords["percentile"] = percentiles.values
+    
+    template = xarray.DataArray(
+        da.random.random(da_shape, chunks=da_chunks),
+        dims=da_dims,
+        coords=da_coords
+    )
+
+    threshold_da = xarray.map_blocks(
+        compute_percentiles_wrapper,
+        obj=baseline_data,
+        kwargs={
+            "rolling_windows": rolling_windows,
+            "percentiles": percentiles
+        },
+        template=template
+    )
+
     add_history(threshold_da, f"Threshold data computed by HDP v{get_version()}.\n")
     if "long_name" in threshold_da.attrs:
         add_history(threshold_da, f"Metadata updated: 'long_name' value '{threshold_da.attrs["long_name"]}' overwritten by HDP.\n")
@@ -196,6 +202,31 @@ def compute_threshold(baseline_data: xarray.DataArray, percentiles: np.ndarray, 
     )
     ds["doy"].attrs = dict(units="day_of_year", baseline_calendar=str(baseline_data.time.values[0].calendar))
     return ds
+
+
+def compute_thresholds(baseline_dataset: list[xarray.DataArray], percentiles: np.ndarray, no_season: bool=False, rolling_window_size: int=7, fixed_value: float=None) -> xarray.Dataset:
+    """
+    Wrapper function for generating multiple thresholds with hdp.threshold.compute_threshold. 
+    Computes percentile and, optionally, fixed value thresholds for a list of baseline measurements.
+
+
+    :param baseline_data: List of DataArrays with baseline measurements to calculate thresholds from.
+    :type baseline_data: list[xarray.DataArray]
+    :param percentiles: List of percentiles to calculate for each baseline.
+    :type percentiles: np.ndarray
+    :param no_season: (Optional) Instead of taking window samples at each day of year to get a seasonally-varying threshold, calculate a single percentile for the entire year. Defaults to False.
+    :type no_season: bool
+    :param rolling_window_size: Size of rolling windows to use when calculating the percentiles.
+    :type rolling_window_size: int
+    :param fixed_value: Value to use for fixed threshold (non-seasonally varying).
+    :type fixed_value: float
+    :return: Aggregated dataset of all thresholds generated.
+    :rtype: xarray.Dataset
+    """
+    threshold_datasets = []
+    for baseline_data in baseline_dataset:
+        threshold_datasets.append(compute_threshold(baseline_data, percentiles, no_season, rolling_window_size, fixed_value))
+    return xarray.merge(threshold_datasets)
 
 
 def compute_threshold_io(baseline_path: str,
