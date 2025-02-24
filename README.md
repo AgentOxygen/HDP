@@ -12,15 +12,14 @@ The HDP offers functions that leverage Xarray, Dask, and Numba to take full adva
 
 Existing tools used to quantify heatwave metrics (such as ehfheatwaves, heatwave3, nctoolkit) were not designed to sample large sections of the heatwave parameter space. Many of these tools struggle to handle the computational burden of analyzing terabyte-scale datasets and do not offer a complete workflow for generating heatwave diagnostics from daily, gridded climate model output. The HDP expands upon this work to empower the user to conduct parameter-sampling analysis and reduce the computational burden of calculating heatwave metrics from increasingly large model output.
 
-# Installation
+# Documentation
 
-The HDP can be installed using [PyPI](https://pypi.org/project/HDP-python/):
-```
-pip install HDP-python
-```
+To learn more about the HDP and how to use it, check out the full ReadTheDocs documentation at https://hdp.readthedocs.io/en/latest/user.html#.
 
 # Quick-Start
+
 The code block below showcases an example HDP workflow for a 400 GB high performance computer:
+
 ```
 from dask.distributed import Client, LocalCluster
 
@@ -52,12 +51,15 @@ figure_notebook = create_notebook(metrics_dataset)
 figure_notebook.save_notebook("/local1/heatwave_summary_figures.ipynb")
 ```
 
-To see the full User Guide, check out the [ReadTheDocs](https://hdp.readthedocs.io/en/latest/user.html#).
+# Contributing
+
+Please report any bugs, ask questions, and make suggestions through the [GitHub Issues form of this repository](https://github.com/AgentOxygen/HDP/issues).
 
 # Acknowledgements
+
 I would like to acknowledge the following people for their contributions to this project:
 1. Dr. Geeta Persad for her guidance, mentorship, and encouragement throughout the development of this package.
 2. Dr. Jane Baldwin for sharing her initial heatwave analysis code that inspired the HDP and providing her expertise on the science of extreme heat.
 3. Dr. Tammas Loughran for developing [ehfheatwaves](https://github.com/tammasloughran/ehfheatwaves) which served as a comparable project and informed the software design of the HDP.
-4. Dr. Ifeanyi Nduka for his design input and expertise in measuring extreme heat.
+4. Dr. Ifeanyi Nduka for his design input and expertise in quantifying extreme heat.
 5. (Soon to be Dr.) Sebastian Utama for helping me debug my code and brainstorm ideas.
