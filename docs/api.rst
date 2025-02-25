@@ -1,20 +1,5 @@
-.. currentmodule:: hdp
-
 API
 ===
-
-.. autosummary::
-   :toctree: generated
-
-    hdp
-    measure
-    metric
-    threshold
-    cli
-    utils
-    graphics.figure
-    graphics.notebook
-    graphics.winkel_tripel
 
 Measure Functions
 -----------------
