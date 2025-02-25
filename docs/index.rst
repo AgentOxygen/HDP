@@ -7,4 +7,5 @@ Contents
 .. toctree::
 
     user
+    tests
     api
