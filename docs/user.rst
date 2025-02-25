@@ -30,17 +30,47 @@ The HDP can be installed using PyPI. You can view the webpage `here <https://pyp
 
 Quick Start
 -----------
-Below is example code that computes heatwave metrics for multiple measures, thresholds, and definitions. Hheatwave metrics are obtained for the test dataset by comparing against the thresholds generated from the baseline dataset.
+Below is example code that computes heatwave metrics for multiple measures, thresholds, and definitions. Heatwave metrics are obtained for the test dataset by comparing against the thresholds generated from the baseline dataset.
 
 .. code-block:: python
 
+    from dask.distributed import Client, LocalCluster
+    import numpy as np
+    import xarray
+    impory hdp
+    
+    
+    cluster = LocalCluster(n_workers=10, memory_limit="40GB", threads_per_worker=1, processes=True)
+    client = Client(cluster)
+    
+    input_dir = "/local1/climate_model_output/"
+    
+    baseline_tasmax = xarray.open_zarr(f"{input_dir}CESM2_historical_day_tasmax.zarr")["tasmax"]
+    test_tasmax = xarray.open_zarr(f"{input_dir}CESM2_ssp370_day_tasmax.zarr")["tasmax"]
+    
+    baseline_measures = hdp.measure.format_standard_measures(temp_datasets=[baseline_tasmax])
+    test_measures = hdp.measure.format_standard_measures(temp_datasets=[test_tasmax])
+    
+    percentiles = np.arange(0.9, 1.0, 0.01)
+    
+    
+    thresholds_dataset = hdp.threshold.compute_thresholds(
+        [baseline_measures["tasmax"]],
+        percentiles
+    )
+    
+    definitions = [[3,0,0], [3,1,1], [4,0,0], [4,1,1], [5,0,0], [5,1,1]]
+    
+    metrics_dataset = compute_group_metrics(test_measures, thresholds_dataset, definitions)
+    metrics_dataset = metrics_dataset.to_zarr("/local1/test_metrics.zarr", mode='w')
+    
+    figure_notebook = create_notebook(metrics_dataset)
+    figure_notebook.save_notebook("/local1/heatwave_summary_figures.ipynb")
     
 
 Example 1: Generating Heatwave Diagnostics
 ------------------------------------------
-The Regional Aerosol Model Intercomparison Project (RAMIP) is a multi-model large ensemble of earth system model experiments conducted to quantify the role of regional aerosol emissions changes in near-term climate change projections (`Wilcox et al., 2023 <https://gmd.copernicus.org/articles/16/4451/2023/>`_). For the sake of simplicity, we will only investigate CESM2 (one of the 8 models available in this MIP) for this example. For CESM2, there are 10 ensemble members for each of the six model experiments. Each experiment is essentially a different emission scenario where regional aerosol emissions are held constant over different parts of the globe. We will use a historical simulation from 1960 to 1970 run produced by CESM2 from the same ensemble as the baseline for calculating the extreme heat threshold. In this first example, we will produce heatwave metrics for one emission scenario, namely SSP3-7.0. In :ref:`Example 2: RAMIP Analysis <example_2>`, we will explore how comparing the heatwave parameter spaces from two different scientific experiments can generate insightful analysis.
-
-For this first analysis, we will explore the following set of heatwave parameters:
+In this first example, we will produce heatwave metrics for one IPCC AR6 emission scenario, SSP3-7.0, run by the CESM2 climate model to produce a large ensemble called the "CESM2 Large Ensemble Community Project" or `LENS2 <https://www.cesm.ucar.edu/community-projects/lens2>`_. We will explore the following set of heatwave parameters:
 
 .. list-table:: Example 1 Parameter Space
    :widths: 50 50
@@ -53,7 +83,7 @@ For this first analysis, we will explore the following set of heatwave parameter
    * - Thresholds
      - [0.9, 0.91, ... 0.99]
    * - Definitions
-     - 3-1-1, 3-3-1, 5-1-1, 5-3-1, 7-1-1, 7-3-1
+     - 3-1-0, 3-1-1, 4-0-0, 4-1-1, 5-0-0, 5-1-1
 
 Note that "_hi" refers to the heat index values for those variables. The model does not explicitly output heat index measurements, but we can calculate them from relative humidity (rh) using the HDP. For the thresholds, we select the range of percentiles from 0.9 to 0.99 with steps of 0.01. The heatwave definitions are defined as integer sequences that describe the following criteria (in order of integer placement):
 
@@ -62,8 +92,6 @@ Note that "_hi" refers to the heat index values for those variables. The model d
 #. The maximum number of subsequent events that can come after the break (and be considered part of the starting heatwave).
 
 The definition codes may feel confusing at first, but they allow the user to capture many different "types" of heatwave and derive additional heatwave metrics without having to repeat the computationally-expensive analysis. We will investigate an example of derived metrics at the end of this section.
-
-
 
 To fully utilize the performance enhancments offered by the HDP, we must first start up a `Dask cluster <https://docs.dask.org/en/stable/deploying.html>`_ to leverage parallel computation. This step is not automated because it requires system-specific configuration. If you are working on a single, local machine, a `LocalCluster <https://docs.dask.org/en/stable/deploying.html#local-machine>`_ typically works best. However, if you are working on a distributed system at a supercomputing center, use the Dask configuration reccomended by your trusted HPC specialist. Below is an example configuration for use on a single-node with at least 30 cores and 200 (20x10 GB) of memory:
 
@@ -97,13 +125,13 @@ To begin, we first need to format these measures so that they are in the correct
     baseline_measures = hdp.measure.format_standard_measures(temp_datasets=[baseline_tasmax], rh=baseline_rh)
     ssp370_measures = hdp.measure.format_standard_measures(temp_datasets=[ssp370_tasmax], rh=ssp370_rh)
 
-Now we can generate our range of thresholds:
+Now we can generate our range of thresholds from the baseline measures:
 
 .. code-block:: python
 
     percentiles = np.arange(0.9, 1.0, 0.01)
     thresholds = hdp.threshold.compute_thresholds(
-        [baseline_measures["tasmax"], baseline_measures["tasmax_hi"]],
+        baseline_measures,
         percentiles
     )
 
@@ -112,9 +140,31 @@ The DataArray structure is visualized below:
 .. image:: assets/threshold_dataarray_example.png
    :width: 600
 
+Next we can compute the heatwave metrics by comparing the SSP3-7.0 measures against the thresholds we generated from the baseline temperatures, using the definitions we defined earlier:
+
+.. code-block:: python
+
+    definitions = [[3,1,0], [3,1,1], [4,0,0], [4,1,1], [5,0,0], [5,1,1]]
+    metrics_dataset = hdp.metric.compute_group_metrics(test_measures, thresholds_dataset, definitions)
+
+The metrics Dataset structure is visualized below:
+
+.. image:: assets/example1_hw_metrics.png
+   :width: 600
+
+Since we are connected to a Dask cluster, we can write the output to a zarr store in parallel. This finishes the data-generation portion of the HDP workflow and saves the results to disk for easier access in the future (otherwise we would need to rerun this heavy computation every time we wanted metrics):
+
+.. code-block:: python
+
+    metrics_dataset.to_zarr("/local1/lens2_ssp370_hw_metrics.zarr", mode='w', compute=True)
+
+
 :ref:`example_2`
+
 Example 2: RAMIP Analysis
 -------------------------
+The Regional Aerosol Model Intercomparison Project (RAMIP) is a multi-model large ensemble of earth system model experiments conducted to quantify the role of regional aerosol emissions changes in near-term climate change projections (`Wilcox et al., 2023 <https://gmd.copernicus.org/articles/16/4451/2023/>`_). For the sake of simplicity, we will only investigate CESM2 (one of the 8 models available in this MIP) for this example. For CESM2, there are 10 ensemble members for each of the six model experiments. Each experiment is essentially a different emission scenario where regional aerosol emissions are held constant over different parts of the globe. We will use a historical simulation from 1960 to 1970 run produced by CESM2 from the same ensemble as the baseline for calculating the extreme heat threshold.
+
 
 :ref:`threshold_calc`
 Threshold Calculation
