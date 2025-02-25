@@ -225,7 +225,7 @@ def compute_hemisphere_ranges(measure: xarray.DataArray) -> xarray.DataArray:
     slice_end = north_ranges.size
     start_indentified = False
     for year_index, n_end_points in enumerate(north_ranges):
-        end_points = np.concat([n_end_points, south_ranges[year_index]])
+        end_points = np.concatenate([n_end_points, south_ranges[year_index]])
         
         if -1 in end_points and not start_indentified:
             slice_start = year_index
