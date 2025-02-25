@@ -224,8 +224,8 @@ def compute_thresholds(baseline_dataset: list[xarray.DataArray], percentiles: np
     :rtype: xarray.Dataset
     """
     threshold_datasets = []
-    for baseline_data in baseline_dataset:
-        threshold_datasets.append(compute_threshold(baseline_data, percentiles, no_season, rolling_window_size, fixed_value))
+    for var_name in baseline_dataset:
+        threshold_datasets.append(compute_threshold(baseline_dataset[var_name], percentiles, no_season, rolling_window_size, fixed_value))
     return xarray.merge(threshold_datasets)
 
 
