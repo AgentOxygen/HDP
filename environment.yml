@@ -1,4 +1,14 @@
+name: hdp_dev
 dependencies:
-  - xarray
-  - numpy
-  - numba
+ - xarray
+ - cartopy
+ - numpy
+ - numba
+ - nc-time-axis
+ - dask
+ - zarr
+ - netCDF4
+ - tqdm
+ - ipywidgets
+ - nbformat
+ - pytest
