@@ -20,7 +20,7 @@ jobs:
       run: |
         conda install -y python=3.11
         conda env update --file environment.yml --name base
+        pip install .
     - name: Test with pytest
       run: |
-        conda install pytest
         pytest hdp/tests/

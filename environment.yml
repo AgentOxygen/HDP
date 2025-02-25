@@ -1,14 +1,18 @@
 name: hdp_dev
+channels:
+  - anaconda
+  - conda-forge
+  - defaults
 dependencies:
- - xarray
- - cartopy
- - numpy
- - numba
- - nc-time-axis
- - dask
- - zarr
- - netCDF4
- - tqdm
- - ipywidgets
- - nbformat
- - pytest
+  - xarray
+  - cartopy
+  - numpy
+  - numba
+  - nc-time-axis
+  - dask
+  - zarr
+  - netCDF4
+  - tqdm
+  - ipywidgets
+  - nbformat
+  - pytest
