@@ -18,10 +18,10 @@ classifiers = [
 ]
 requires-python = ">=3.12.3"
 dependencies = [
-  "xarray >= 2024.3.0",
+  "numpy",
+  "xarray >= 2025.1.1",
   "cartopy",
-  "numpy >= 1.26.4",
-  "numba >= 0.59.1",
+  "numba >= 0.60.0",
   "nc_time_axis",
   "dask[complete]",
   "zarr",

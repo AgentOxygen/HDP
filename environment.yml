@@ -4,9 +4,9 @@ channels:
   - conda-forge
   - defaults
 dependencies:
+  - numpy
   - xarray
   - cartopy
-  - numpy
   - numba
   - nc-time-axis
   - dask
