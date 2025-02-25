@@ -76,7 +76,9 @@ def heatwave_number(hw_ts: np.ndarray, season_ranges: np.ndarray) -> np.ndarray:
     output = np.zeros(season_ranges.shape[0], dtype=nb.int64)
     for y in range(season_ranges.shape[0]):
         end_points = season_ranges[y]
-        output[y] = np.unique(hw_ts[end_points[0]:end_points[1]]).size - 1
+        uniques = np.unique(hw_ts[end_points[0]:end_points[1]])
+        output[y] = uniques[uniques != 0].size
+
     return output
 
 
@@ -396,12 +398,14 @@ def compute_individual_metrics(measure: xarray.DataArray, threshold: xarray.Data
         assert threshold.attrs["baseline_calendar"] == measure.time.values[0].calendar
 
     combined_history = ""
-    for entry in measure.attrs["history"].split("\n"):
-        if entry != '':
-            combined_history += (f"(Measure) {entry}\n")
-    for entry in threshold.attrs["history"].split("\n"):
-        if entry != '':
-            combined_history += (f"(Threshold) {entry}\n")
+    if "history" in measure.attrs:
+        for entry in measure.attrs["history"].split("\n"):
+            if entry != '':
+                combined_history += (f"(Measure) {entry}\n")
+    if "history" in threshold.attrs:
+        for entry in threshold.attrs["history"].split("\n"):
+            if entry != '':
+                combined_history += (f"(Threshold) {entry}\n")
 
     season_ranges = compute_hemisphere_ranges(measure)
 
