@@ -22,6 +22,10 @@ The code block below showcases an example HDP workflow for a 400 GB high perform
 
 ```
 from dask.distributed import Client, LocalCluster
+import numpy as np
+import xarray
+impory hdp
+
 
 cluster = LocalCluster(n_workers=10, memory_limit="40GB", threads_per_worker=1, processes=True)
 client = Client(cluster)
