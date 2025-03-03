@@ -87,7 +87,7 @@ def heat_index(temp: float, rel_humid: float) -> float:
         hi += -0.00000199*((rel_humid*temp)**2)
         
         if rel_humid < 13 and 80 <= temp <= 112:
-            hi -= ((13 - rel_humid)/4)*np.sqrt(((17 - np.abs(temp - 95))/17))
+            hi -= ((13 - rel_humid)/4)*np.sqrt((np.abs(17 - np.abs(temp - 95))/17))
         elif rel_humid > 85 and 80 <= temp <= 87:
             hi += ((rel_humid - 85)/10) * ((87 - temp)/5)
             
