@@ -37,7 +37,7 @@ Below is example code that computes heatwave metrics for multiple measures, thre
     from dask.distributed import Client, LocalCluster
     import numpy as np
     import xarray
-    impory hdp
+    import hdp
     
     
     cluster = LocalCluster(n_workers=10, memory_limit="40GB", threads_per_worker=1, processes=True)
@@ -55,16 +55,16 @@ Below is example code that computes heatwave metrics for multiple measures, thre
     
     
     thresholds_dataset = hdp.threshold.compute_thresholds(
-        [baseline_measures["tasmax"]],
+        baseline_measures,
         percentiles
     )
     
     definitions = [[3,0,0], [3,1,1], [4,0,0], [4,1,1], [5,0,0], [5,1,1]]
     
-    metrics_dataset = compute_group_metrics(test_measures, thresholds_dataset, definitions)
+    metrics_dataset = hdp.metric.compute_group_metrics(test_measures, thresholds_dataset, definitions)
     metrics_dataset = metrics_dataset.to_zarr("/local1/test_metrics.zarr", mode='w')
     
-    figure_notebook = create_notebook(metrics_dataset)
+    figure_notebook = hdp.hdp.create_notebook(metrics_dataset)
     figure_notebook.save_notebook("/local1/heatwave_summary_figures.ipynb")
     
 
