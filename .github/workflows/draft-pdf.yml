@@ -1,6 +1,10 @@
 name: Draft JOSS PDF
 on:
   push:
+    branches:
+      - '*'
+    tags-ignore:
+      - '*'
     paths:
       - docs/joss/**
       - .github/workflows/draft-pdf.yml
