@@ -211,15 +211,15 @@ def get_range_indices(times: np.ndarray, start: tuple, end: tuple) -> np.ndarray
 
 def compute_hemisphere_ranges(measure: xarray.DataArray) -> xarray.DataArray:
     """
-    Computes the heatwave season ranges by time index (not the timestamp, rather the index corresponding to the timestamp) for each grid cell based on whether it is in the Northern Hemisphere (boreal summer, June 1st to September 1st) or Southern Hemisphere (austral summer, December 1st to March 1st).
+    Computes the heatwave season ranges by time index (not the timestamp, rather the index corresponding to the timestamp) for each grid cell based on whether it is in the Northern Hemisphere (boreal summer, May 1st to October 1st) or Southern Hemisphere (austral summer, November 1st to March 1st).
 
     :param measure: DataArray containing 'lat' and 'lon' variables corresponding to grid.
     :type measure: xarray.DataArray
     :return: Generates seasonal ranges by hemisphere for an arbitrary 'lat'-'lon' grid.
     :rtype: xarray.DataArray
     """
-    north_ranges = get_range_indices(measure.time.values, (6, 1), (9, 1))
-    south_ranges = get_range_indices(measure.time.values, (12, 1), (2, 1))
+    north_ranges = get_range_indices(measure.time.values, (5, 1), (10, 1))
+    south_ranges = get_range_indices(measure.time.values, (11, 1), (4, 1))
 
     slice_start = 0
     slice_end = north_ranges.size
