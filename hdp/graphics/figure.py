@@ -92,7 +92,7 @@ def add_percentile_colorbar(ax, percentiles):
     
     cbar = plt.colorbar(sm, ax=ax, ticks=np.arange(len(percentiles)), pad=0.02)
     cbar.set_label('Percentile', rotation=270, labelpad=8)
-    cbar.set_ticklabels(percentiles)
+    cbar.set_ticklabels(np.round(percentiles, 3))
     return cbar
 
 
@@ -116,7 +116,7 @@ def add_percentile_colorbar(ax, percentiles):
     
     cbar = plt.colorbar(sm, ax=ax, ticks=np.arange(len(percentiles)) + 0.5, pad=0.02)
     cbar.set_label('Percentile', rotation=270, labelpad=8)
-    cbar.set_ticklabels(percentiles)
+    cbar.set_ticklabels(np.round(percentiles, 3))
     return cbar
 
 
@@ -281,12 +281,12 @@ def plot_metric_parameter_comparison(metric_da):
         metric_da = metric_da.mean(dim="member")
     
     spatio_temporal_mean = compute_weighted_spatial_mean(metric_da).mean(dim="time")
-    
+
     colormesh = axes[0].pcolormesh(spatio_temporal_mean.values, cmap="hot")
     axes[0].set_xticks(np.arange(spatio_temporal_mean.definition.size) + 0.5)
     axes[0].set_yticks(np.arange(spatio_temporal_mean.percentile.size) + 0.5)
     axes[0].set_xticklabels(spatio_temporal_mean.definition.values)
-    axes[0].set_yticklabels(spatio_temporal_mean.percentile.values)
+    axes[0].set_yticklabels(np.round(spatio_temporal_mean.percentile.values, 3))
     axes[0].set_xlabel("Definition")
     axes[0].set_ylabel("Percentile")
     cbar = fig.colorbar(colormesh, ax=axes[0], pad=0.02)
