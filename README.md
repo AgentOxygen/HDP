@@ -3,6 +3,7 @@
 [![Available on pypi](https://img.shields.io/pypi/v/HDP-python.svg)](https://pypi.org/project/HDP-python/)
 [![Docs](https://readthedocs.org/projects/hdp/badge/?version=latest)](https://hdp.readthedocs.io/en/latest/)
 ![GitHub License](https://img.shields.io/github/license/AgentOxygen/HDP)
+[![status](https://joss.theoj.org/papers/071c99a9e9f52348df4de69ccdee5133/status.svg)](https://joss.theoj.org/papers/071c99a9e9f52348df4de69ccdee5133)
 
 The Heatwave Diagnostics Package (HDP) is an open-source Python project that equips researchers with computationally-efficient tools to quantify heatwave metrics across multiple parameters for daily, gridded data produced by climate model large ensembles.
 
