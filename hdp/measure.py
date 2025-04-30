@@ -160,7 +160,7 @@ def format_standard_measures(temp_datasets: list[xarray.DataArray], rh: xarray.D
     :param rh: (Optional) Relative humidity DataArray to compute heat index values with for each temperature DataArray.
     :type rh: xarray.DataArray
     :return: Dataset containing all input variables formatted and initialized for HDP analysis.
-    :rtype: xarray.DataArray
+    :rtype: xarray.Dataset
     """
     measures = []
 
