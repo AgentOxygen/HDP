@@ -36,13 +36,13 @@ def get_func_description(func):
     return desc
 
 
-def generate_test_warming_dataarray(start_date="2000-01-01", end_date="2009-12-31", grid_shape=(10, 10), warming_period=10):
+def generate_test_warming_dataarray(start_date="2000-01-01", end_date="2049-12-31", grid_shape=(12, 10), warming_period=10):
     base_data = generate_test_control_dataarray(start_date=start_date, end_date=end_date, grid_shape=grid_shape)
     base_data += xarray.DataArray(np.arange(base_data["time"].size) / (365*warming_period), dims=["time"], coords={"time": base_data["time"]})
     return base_data
 
 
-def generate_test_rh_dataarray(start_date="2000-01-01", end_date="2009-12-31", grid_shape=(10, 10)):
+def generate_test_rh_dataarray(start_date="2000-01-01", end_date="2049-12-31", grid_shape=(12, 10)):
     base_data = generate_test_control_dataarray(start_date=start_date, end_date=end_date, grid_shape=grid_shape)
     base_data = abs(base_data / base_data.max() - 0.3)
     base_data = base_data.rename("test_rh_data")
@@ -50,7 +50,7 @@ def generate_test_rh_dataarray(start_date="2000-01-01", end_date="2009-12-31", g
     return base_data
 
 
-def generate_test_control_dataarray(start_date="2000-01-01", end_date="2009-12-31", grid_shape=(10, 10)):
+def generate_test_control_dataarray(start_date="2000-01-01", end_date="2049-12-31", grid_shape=(12, 10)):
     time_values = xarray.date_range(
         start=start_date,
         end=end_date,
@@ -63,8 +63,8 @@ def generate_test_control_dataarray(start_date="2000-01-01", end_date="2009-12-3
     
     lat_vals = np.linspace(-90, 90, grid_shape[1], dtype=float)
 
-    lat_grad = np.broadcast_to(np.abs(lat_vals) / 90 * 15, grid_shape).T
-    temperature_seasonal_vals = temperature_seasonal_vals - lat_grad[:, :, None]
+    lat_grad = np.broadcast_to(np.abs(lat_vals) / 90 * 15, grid_shape)
+    temperature_seasonal_vals = temperature_seasonal_vals - np.broadcast_to(lat_grad[:, :, None], temperature_seasonal_vals.shape)
 
     return xarray.DataArray(
         data=temperature_seasonal_vals,
