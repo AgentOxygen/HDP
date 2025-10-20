@@ -1,3 +1,4 @@
+from hdp.graphics.notebook import create_notebook
 import pytest
 import hdp.utils
 import hdp.measure
@@ -6,9 +7,16 @@ import hdp.metric
 import numpy as np
 
 
-def test_full_data_workflow():
-    baseline_temp = hdp.utils.generate_test_control_dataarray().rename("temp")
-    baseline_rh = hdp.utils.generate_test_rh_dataarray().rename("rh")
+@pytest.fixture(scope="function")
+def temp_output_dir(tmp_path_factory):
+    return tmp_path_factory.mktemp("output_dir")
+
+
+def test_full_data_workflow(temp_output_dir):
+    grid_shape = (2, 3)
+
+    baseline_temp = hdp.utils.generate_test_control_dataarray(grid_shape=grid_shape).rename("temp")
+    baseline_rh = hdp.utils.generate_test_rh_dataarray(grid_shape=grid_shape).rename("rh")
     baseline_measures = hdp.measure.format_standard_measures([baseline_temp], rh=baseline_rh)
     
     percentiles = np.arange(0.9, 1, 0.01)
@@ -17,7 +25,7 @@ def test_full_data_workflow():
     
     exceedance_pattern = [1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1]
     
-    test_temp = hdp.utils.generate_test_warming_dataarray().rename("temp")
+    test_temp = hdp.utils.generate_test_warming_dataarray(grid_shape=grid_shape).rename("temp")
     test_rh = baseline_rh
     
     hw_definitions = [[3,0,0], [3,1,1], [4,2,0], [4,1,3], [5,0,1], [5,1,4]]
@@ -53,3 +61,6 @@ def test_full_data_workflow():
             assert metrics[var].attrs["units"] == 'heatwave events', f"Variable '{var}' has incorrect units '{metrics[var].attrs["units"]}'"
         else:
             assert False, f"Cannot determine primary heatwave metric from variable '{var}'."
+
+    figure_notebook = create_notebook(metrics)
+    figure_notebook.save_notebook(f"{temp_output_dir}/sample_hw_summary_figures.ipynb")
