@@ -135,11 +135,13 @@ def get_unique_metric_names(hw_ds):
     return unique_metrics
 
 
-def plot_map(metric_da, axis, cmap="hot"):
+def plot_map(metric_da, ax, cmap="hot"):
     cmap_obj = plt.get_cmap(cmap)
+    metric_da = metric_da.transpose(..., "lon")
+
     cyclic_values, cyclic_lons = add_cyclic_point(metric_da.values, metric_da.lon.values, axis=-1)
-    ax_contour = axis.contourf(cyclic_lons, metric_da.lat.values, cyclic_values, transform=ccrs.PlateCarree(), cmap=cmap_obj)
-    axis.coastlines()
+    ax_contour = ax.contourf(cyclic_lons, metric_da.lat.values, cyclic_values, transform=ccrs.PlateCarree(), cmap=cmap_obj)
+    ax.coastlines()
     return ax_contour
 
 
