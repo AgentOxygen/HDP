@@ -1,5 +1,8 @@
 import pytest
-import hdp
+import hdp.utils
+import hdp.measure
+import hdp.threshold
+import hdp.metric
 import numpy as np
 
 
@@ -42,7 +45,7 @@ def test_full_data_workflow():
     assert metric_means["temp.temp_threshold.HWD"] >= metric_means["temp.temp_threshold.HWA"]
     
     for var in metrics:
-        assert metrics[var].shape == (metrics.percentile.size, metrics.definition.size, metrics.lat.size, metrics.lon.size, metrics.time.size) 
+        assert metrics[var].shape == (metrics.percentile.size, metrics.definition.size, metrics.lon.size, metrics.lat.size, metrics.time.size) 
         assert metrics[var].dtype == int
         if "HWF" in var or "HWD" in var:
             assert metrics[var].attrs["units"] == 'heatwave days', f"Variable '{var}' has incorrect units '{metrics[var].attrs["units"]}'"
