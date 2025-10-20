@@ -37,11 +37,12 @@ def get_func_description(func):
 
 
 def generate_synthetic_dataset(center=25, amplitude=10, name="temperature", units="degC"):
-    time_values = xarray.cftime_range(
+    time_values = xarray.date_range(
         start=cftime.DatetimeNoLeap(2000, 1, 1),
         end=cftime.DatetimeNoLeap(2009, 12, 31),
         freq="D",
-        calendar="noleap"
+        calendar="noleap",
+        use_cftime=True
     )
     
     temp_timeseries = center + amplitude*np.sin(np.pi*np.arange(time_values.size, dtype=float) / 365)
