@@ -4,8 +4,8 @@ import numpy as np
 
 
 def test_full_data_workflow():
-    baseline_temp = hdp.utils.generate_synthetic_dataset(name="temp")["temp"]
-    baseline_rh = hdp.utils.generate_synthetic_dataset(name="rh", units="%", center=90, amplitude=15)["rh"]
+    baseline_temp = hdp.utils.generate_test_dataset(name="temp")["temp"]
+    baseline_rh = hdp.utils.generate_test_dataset(name="rh", units="%", center=90, amplitude=15)["rh"]
     baseline_measures = hdp.measure.format_standard_measures([baseline_temp], rh=baseline_rh)
     
     percentiles = np.arange(0.9, 1, 0.01)
@@ -14,9 +14,9 @@ def test_full_data_workflow():
     
     exceedance_pattern = [1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1]
     
-    test_temp = hdp.utils.generate_synthetic_dataset(name="temp")["temp"]
+    test_temp = hdp.utils.generate_test_dataset(name="temp")["temp"]
     test_temp = hdp.utils.generate_exceedance_dataarray(test_temp, exceedance_pattern)
-    test_rh = hdp.utils.generate_synthetic_dataset(name="rh", units="%", center=90, amplitude=15)["rh"]
+    test_rh = hdp.utils.generate_test_dataset(name="rh", units="%", center=90, amplitude=15)["rh"]
     
     hw_definitions = [[3,0,0], [3,1,1], [4,2,0], [4,1,3], [5,0,1], [5,1,4]]
     

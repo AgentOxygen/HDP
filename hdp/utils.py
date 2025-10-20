@@ -36,7 +36,7 @@ def get_func_description(func):
     return desc
 
 
-def generate_synthetic_dataset(center=25, amplitude=10, name="temperature", units="degC"):
+def generate_test_dataset(center=25, amplitude=10, name="temperature", units="degC"):
     time_values = xarray.date_range(
         start=cftime.DatetimeNoLeap(2000, 1, 1),
         end=cftime.DatetimeNoLeap(2009, 12, 31),

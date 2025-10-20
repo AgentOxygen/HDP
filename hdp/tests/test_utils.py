@@ -11,13 +11,13 @@ def test_get_version():
     assert type(hdp.utils.get_version()) is str
 
 
-def test_synthetic_data_functions():
+def test_test_data_functions():
     var = "test"
     center_val = 10
     amplitude_val = 1
     units = "test_units"
     
-    ds = hdp.utils.generate_synthetic_dataset(name=var, units=units, center=center_val, amplitude=amplitude_val)
+    ds = hdp.utils.generate_test_dataset(name=var, units=units, center=center_val, amplitude=amplitude_val)
     assert type(ds) is xarray.Dataset
     assert len(ds.data_vars) == 1
     assert var in ds
