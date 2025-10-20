@@ -36,45 +36,46 @@ def get_func_description(func):
     return desc
 
 
-def generate_test_dataset(center=25, amplitude=10, name="temperature", units="degC"):
+def generate_test_warming_dataarray(start_date="2000-01-01", end_date="2009-12-31", grid_shape=(10, 10), warming_period=10):
+    base_data = generate_test_control_dataarray(start_date=start_date, end_date=end_date, grid_shape=grid_shape)
+    base_data += xarray.DataArray(np.arange(base_data["time"].size) / (365*warming_period), dims=["time"], coords={"time": base_data["time"]})
+    return base_data
+
+
+def generate_test_rh_dataarray(start_date="2000-01-01", end_date="2009-12-31", grid_shape=(10, 10)):
+    base_data = generate_test_control_dataarray(start_date=start_date, end_date=end_date, grid_shape=grid_shape)
+    base_data = abs(base_data / base_data.max() - 0.3)
+    base_data = base_data.rename("test_rh_data")
+    base_data.attrs["units"] = 'g/g'
+    return base_data
+
+
+def generate_test_control_dataarray(start_date="2000-01-01", end_date="2009-12-31", grid_shape=(10, 10)):
     time_values = xarray.date_range(
-        start=cftime.DatetimeNoLeap(2000, 1, 1),
-        end=cftime.DatetimeNoLeap(2009, 12, 31),
+        start=start_date,
+        end=end_date,
         freq="D",
         calendar="noleap",
         use_cftime=True
     )
+    temperature_seasonal_ts = 20 + 15*np.sin(np.pi*np.arange(time_values.size, dtype=float) / 365)
+    temperature_seasonal_vals = np.broadcast_to(temperature_seasonal_ts, (grid_shape[0], grid_shape[1], temperature_seasonal_ts.size))
     
-    temp_timeseries = center + amplitude*np.sin(np.pi*np.arange(time_values.size, dtype=float) / 365)
-    temp_values = np.broadcast_to(temp_timeseries, (3, 3, temp_timeseries.size))
-    
-    temp_da = xarray.DataArray(
-        data=da.from_array(temp_values),
-        dims=["lat", "lon", "time"],
+    lat_vals = np.linspace(-90, 90, grid_shape[1], dtype=float)
+
+    lat_grad = np.broadcast_to(np.abs(lat_vals) / 90 * 15, grid_shape).T
+    temperature_seasonal_vals = temperature_seasonal_vals - lat_grad[:, :, None]
+
+    return xarray.DataArray(
+        data=temperature_seasonal_vals,
+        dims=["lon", "lat", "time"],
         coords={
-            "lat": np.array([-90, 0, 90], dtype=float),
-            "lon": np.array([-180, 0, 180], dtype=float),
+            "lon": np.linspace(-180, 180, grid_shape[0], dtype=float),
+            "lat": lat_vals,
             "time": time_values
         },
-        name=name,
+        name="test_temperature_data",
         attrs={
-            "units": units
+            "units": "degC"
         }
-    ).chunk(dict(lat=1, lon=1))
-    return xarray.Dataset({name: temp_da})
-
-
-def generate_exceedance_dataarray(measure, exceedance_pattern, multiplier=1.0):
-    tiles = np.ceil(measure.time.size / len(exceedance_pattern)).astype(int)
-    pattern_data = np.broadcast_to(np.tile(exceedance_pattern, tiles)[:measure.time.size], measure.shape)*multiplier
-
-    ret_da = None
-    with xarray.set_options(keep_attrs=True): 
-        ret_da = measure + xarray.DataArray(
-            data=da.from_array(pattern_data),
-            dims=measure.dims,
-            coords=measure.coords,
-            name=measure.name,
-            attrs=measure.attrs
-        ).chunk(measure.chunksizes)
-    return ret_da
+    ).chunk('auto')

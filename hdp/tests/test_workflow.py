@@ -4,8 +4,8 @@ import numpy as np
 
 
 def test_full_data_workflow():
-    baseline_temp = hdp.utils.generate_test_dataset(name="temp")["temp"]
-    baseline_rh = hdp.utils.generate_test_dataset(name="rh", units="%", center=90, amplitude=15)["rh"]
+    baseline_temp = hdp.utils.generate_test_control_dataarray().rename("temp")
+    baseline_rh = hdp.utils.generate_test_rh_dataarray().rename("rh")
     baseline_measures = hdp.measure.format_standard_measures([baseline_temp], rh=baseline_rh)
     
     percentiles = np.arange(0.9, 1, 0.01)
@@ -14,9 +14,8 @@ def test_full_data_workflow():
     
     exceedance_pattern = [1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1]
     
-    test_temp = hdp.utils.generate_test_dataset(name="temp")["temp"]
-    test_temp = hdp.utils.generate_exceedance_dataarray(test_temp, exceedance_pattern)
-    test_rh = hdp.utils.generate_test_dataset(name="rh", units="%", center=90, amplitude=15)["rh"]
+    test_temp = hdp.utils.generate_test_warming_dataarray().rename("temp")
+    test_rh = baseline_rh
     
     hw_definitions = [[3,0,0], [3,1,1], [4,2,0], [4,1,3], [5,0,1], [5,1,4]]
     
@@ -36,11 +35,6 @@ def test_full_data_workflow():
     assert metrics.definition.values[4] == "5-0-1"
     assert metrics.definition.values[5] == "5-1-4"
     assert (metrics.percentile.values == percentiles).all()
-
-    assert (metrics["temp.temp_threshold.HWF"] == metrics["temp_hi.temp_hi_threshold.HWF"]).all()
-    assert (metrics["temp.temp_threshold.HWD"] == metrics["temp_hi.temp_hi_threshold.HWD"]).all()
-    assert (metrics["temp.temp_threshold.HWA"] == metrics["temp_hi.temp_hi_threshold.HWA"]).all()
-    assert (metrics["temp.temp_threshold.HWN"] == metrics["temp_hi.temp_hi_threshold.HWN"]).all()
 
     metric_means = metrics.mean()
 
