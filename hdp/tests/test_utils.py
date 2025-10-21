@@ -1,46 +1,57 @@
-import hdp.utils
-import xarray
+from hdp.utils import *
 import numpy as np
-
+from math import isclose
+from xarray import DataArray
 
 def test_get_time_stamp():
-    assert type(hdp.utils.get_time_stamp()) is str
+    assert type(get_time_stamp()) is str
 
 
 def test_get_version():
-    assert type(hdp.utils.get_version()) is str
+    assert type(get_version()) is str
 
 
-def test_synthetic_data_functions():
-    var = "test"
-    center_val = 10
-    amplitude_val = 1
-    units = "test_units"
-    
-    ds = hdp.utils.generate_synthetic_dataset(name=var, units=units, center=center_val, amplitude=amplitude_val)
-    assert type(ds) is xarray.Dataset
-    assert len(ds.data_vars) == 1
-    assert var in ds
-    
-    assert "units" in ds[var].attrs
-    assert ds[var].attrs["units"] == units
-    assert ds[var].dims == ("lat", "lon", "time")
-    assert ds[var].dtype == float
-    assert ds[var].time.values[0].calendar == "noleap"
-    assert ds[var].lat.size > 1
-    assert ds[var].lon.size > 1
-    assert ds[var].time.size >= 2*365
+def test_control_dataarray():
+    control_da = generate_test_control_dataarray(grid_shape=(1,1), start_date="2000", end_date="2100")
+    assert type(control_da) is DataArray
+    var = control_da.name
+    assert control_da.attrs["units"] == "degC"
+    assert control_da.dims == ("lon", "lat", "time")
+    assert control_da.dtype == float
+    assert control_da.time.values[0].calendar == "noleap"
+    assert control_da.time.values.size >= 365
+    assert np.sum(np.isnan(control_da)) == 0
 
-    data = ds[var].compute()
-    
-    assert np.isclose(data.mean(), center_val)
-    assert np.isclose(data.max(), center_val + amplitude_val)
-    assert np.isclose(data.values, data.values[0]).all()
+    control_slope = np.polyfit(np.arange(control_da["time"].size), control_da.mean(dim=["lat", "lon"]).values, 1)[0]
+    assert np.abs(control_slope) < 0.01
 
-    exceed_data = hdp.utils.generate_exceedance_dataarray(ds[var], exceedance_pattern=[1, 0, 1, 0]).compute()
 
-    assert np.isclose(exceed_data.mean(), center_val + 0.5)
-    assert exceed_data.attrs == ds[var].attrs
-    assert exceed_data.dims == ds[var].dims
-    assert exceed_data.shape == ds[var].shape
-    assert exceed_data.dtype == ds[var].dtype
+def test_warming_dataarray():
+    warming_da = generate_test_warming_dataarray(grid_shape=(1,1), start_date="2000", end_date="2100")
+    avg_da = warming_da.mean(dim=["lat", "lon"]).values
+    warm_slope = np.polyfit(np.arange(avg_da.size), avg_da, 1)[0]
+
+    assert warm_slope > 0
+    assert not isclose(warm_slope, 0)
+
+
+def test_rh_dataarray():
+    rh_da = generate_test_rh_dataarray()
+
+    assert rh_da.max() <= 1
+    assert rh_da.min() >= 0
+
+
+def test_defaults_compatibility():
+    control_da = generate_test_control_dataarray()
+    warming_da = generate_test_warming_dataarray()
+    rh_da = generate_test_rh_dataarray()
+
+    assert control_da.shape == warming_da.shape
+    assert warming_da.shape == rh_da.shape
+
+    assert control_da.dims == warming_da.dims
+    assert warming_da.dims == rh_da.dims
+
+    assert control_da.name == warming_da.name
+    assert control_da.units == warming_da.units

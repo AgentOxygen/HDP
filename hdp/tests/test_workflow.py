@@ -1,11 +1,22 @@
+from hdp.graphics.notebook import create_notebook
 import pytest
-import hdp
+import hdp.utils
+import hdp.measure
+import hdp.threshold
+import hdp.metric
 import numpy as np
 
 
-def test_full_data_workflow():
-    baseline_temp = hdp.utils.generate_synthetic_dataset(name="temp")["temp"]
-    baseline_rh = hdp.utils.generate_synthetic_dataset(name="rh", units="%", center=90, amplitude=15)["rh"]
+@pytest.fixture(scope="function")
+def temp_output_dir(tmp_path_factory):
+    return tmp_path_factory.mktemp("output_dir")
+
+
+def test_full_data_workflow(temp_output_dir):
+    grid_shape = (2, 3)
+
+    baseline_temp = hdp.utils.generate_test_control_dataarray(grid_shape=grid_shape).rename("temp")
+    baseline_rh = hdp.utils.generate_test_rh_dataarray(grid_shape=grid_shape).rename("rh")
     baseline_measures = hdp.measure.format_standard_measures([baseline_temp], rh=baseline_rh)
     
     percentiles = np.arange(0.9, 1, 0.01)
@@ -14,9 +25,8 @@ def test_full_data_workflow():
     
     exceedance_pattern = [1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1]
     
-    test_temp = hdp.utils.generate_synthetic_dataset(name="temp")["temp"]
-    test_temp = hdp.utils.generate_exceedance_dataarray(test_temp, exceedance_pattern)
-    test_rh = hdp.utils.generate_synthetic_dataset(name="rh", units="%", center=90, amplitude=15)["rh"]
+    test_temp = hdp.utils.generate_test_warming_dataarray(grid_shape=grid_shape).rename("temp")
+    test_rh = baseline_rh
     
     hw_definitions = [[3,0,0], [3,1,1], [4,2,0], [4,1,3], [5,0,1], [5,1,4]]
     
@@ -37,18 +47,13 @@ def test_full_data_workflow():
     assert metrics.definition.values[5] == "5-1-4"
     assert (metrics.percentile.values == percentiles).all()
 
-    assert (metrics["temp.temp_threshold.HWF"] == metrics["temp_hi.temp_hi_threshold.HWF"]).all()
-    assert (metrics["temp.temp_threshold.HWD"] == metrics["temp_hi.temp_hi_threshold.HWD"]).all()
-    assert (metrics["temp.temp_threshold.HWA"] == metrics["temp_hi.temp_hi_threshold.HWA"]).all()
-    assert (metrics["temp.temp_threshold.HWN"] == metrics["temp_hi.temp_hi_threshold.HWN"]).all()
-
     metric_means = metrics.mean()
 
     assert metric_means["temp.temp_threshold.HWF"] >= metric_means["temp.temp_threshold.HWD"]
     assert metric_means["temp.temp_threshold.HWD"] >= metric_means["temp.temp_threshold.HWA"]
     
     for var in metrics:
-        assert metrics[var].shape == (metrics.percentile.size, metrics.definition.size, metrics.lat.size, metrics.lon.size, metrics.time.size) 
+        assert metrics[var].shape == (metrics.percentile.size, metrics.definition.size, metrics.lon.size, metrics.lat.size, metrics.time.size) 
         assert metrics[var].dtype == int
         if "HWF" in var or "HWD" in var:
             assert metrics[var].attrs["units"] == 'heatwave days', f"Variable '{var}' has incorrect units '{metrics[var].attrs["units"]}'"
@@ -56,3 +61,6 @@ def test_full_data_workflow():
             assert metrics[var].attrs["units"] == 'heatwave events', f"Variable '{var}' has incorrect units '{metrics[var].attrs["units"]}'"
         else:
             assert False, f"Cannot determine primary heatwave metric from variable '{var}'."
+
+    figure_notebook = create_notebook(metrics)
+    figure_notebook.save_notebook(f"{temp_output_dir}/sample_hw_summary_figures.ipynb")
