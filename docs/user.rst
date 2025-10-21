@@ -35,7 +35,8 @@ Below is example code that computes heatwave metrics for multiple measures, thre
 .. code-block:: python
 
     import hdp
-    
+    import numpy as np
+
     output_dir = "."
 
     sample_control_temp = hdp.utils.generate_test_control_dataarray()
