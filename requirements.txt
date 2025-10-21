@@ -10,4 +10,6 @@ netCDF4
 tqdm
 ipywidgets
 nbformat
+sphinx
+sphinx-autobuild
 sphinx-rtd-theme

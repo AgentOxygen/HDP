@@ -22,6 +22,7 @@ bibliography: paper.bib
 ---
 
 # Summary
+
 The heatwave diagnostics package (`HDP`) is a Python package that provides the climate research community with tools to compute heatwave metrics for the large volumes of data produced by earth system model large ensembles, across multiple measures of heat, extreme heat thresholds, and heatwave definitions. The `HDP` leverages performance-oriented design using xarray, Dask, and Numba to maximize the use of available hardware resources while maintaining accessibility through an intuitive interface and well-documented user guide. This approach empowers the user to generate metrics for a wide and diverse range of heatwave types across the parameter space.
 
 # Statement of Need
@@ -30,9 +31,11 @@ Accurate quantification of the evolution of heatwave trends in climate model out
 Metrics such as heatwave frequency and duration are commonly used in hazard assessments, but there are few centralized tools and no universal heatwave criteria for computing them. This has resulted in parameter heterogeneity across the literature and has prompted some studies to adopt multiple definitions to build robustness (@perkins_review_2015). However, many studies rely on only a handful of metrics and definitions due to the excessive data management and computational burden of sampling a greater number of parameters (@perkins_measurement_2013). The introduction of large ensembles has further complicated the development of software tools, which have remained mostly specific to individual studies. Some generalized tools have been developed to address this problem, but do not contain explicit methods for evaluating the potential sensitivities of heatwave hazard to the choices of heat measure, extreme heat threshold, and heatwave definition.
 
 Development of the `HDP` was started in 2023 primarily to address the computational obstacles around handling terabyte-scale large ensembles, but quickly evolved to investigate new scientific questions around how the selection of characteristic heatwave parameters may impact hazard analysis. The `HDP` can provide insight into how the spatial-temporal response of heatwaves to climate perturbations depends on the choice of heatwave parameters. Although software does exist for calculating heatwave metrics (e.g. [heatwave3](https://robwschlegel.github.io/heatwave3/index.html), [xclim](https://xclim.readthedocs.io/en/stable/indices.html), [ehfheatwaves](https://tammasloughran.github.io/ehfheatwaves/)), these tools are not optimized to analyze more than a few definitions and thresholds at a time nor do they offer diagnostic plots.
+
 # Key Features
 
 ## Extension of XArray with Implementations of Dask and Numba
+
 `xarray` is a popular Python package used for geospatial analysis and for working with the netCDF files produced by climate models. The `HDP` workflow is based around `xarray` and seamlessly integrates with the `xarray.DataArray` data structure. Parallelization of `HDP` functions is achieved through the integration of `dask` with automated chunking and task graph construction features built into the `xarray` library. 
 
 ## Heatwave Metrics for Multiple Measures, Thresholds, and Definitions
@@ -59,6 +62,7 @@ The `HDP` allows the user to test a range of parameter values: for example, heat
 : Description of the heatwave metrics produced by the HDP. \label{table:metrics}
 
 ## Diagnostic Notebooks and Figures
+
 The automatic workflow compiles a "figure deck" containing diagnostic plots for multiple heatwave parameters and input variables. To simplify this process, figure decks are serialized and stored in a single Jupyter Notebook separated into descriptive sections. Basic descriptions are included in markdown cells at the top of each figure. The `HDPNotebook` class in `hdp.graphics.notebook` is utilized to facilitate the generation of these Notebooks internally, but can be called through the API as well to build custom notebooks. An example of a Notebook of the standard figure deck is shown in Figure \ref{fig:notebook}.
 
 ![Example of an HDP standard figure deck \label{fig:notebook}](HDP_Notebook_Example.png)
