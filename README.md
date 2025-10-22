@@ -65,6 +65,8 @@ sample_warming_temp.to_netcdf(f"{output_dir}/sample_warming_temp.nc", mode='w')
 
 Please report any bugs, ask questions, and make suggestions through the [GitHub Issues form of this repository](https://github.com/AgentOxygen/HDP/issues).
 
+Check out the [Developer's Guide](https://hdp.readthedocs.io/en/latest/dev_guide.html) for information on how to setup a development environment and make changes to the HDP.
+
 # Acknowledgements
 
 I would like to acknowledge the following people for their contributions to this project:
