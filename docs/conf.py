@@ -1,6 +1,5 @@
 import sys
 import os
-sys.path.insert(0, os.path.abspath('..'))
 import hdp
 
 # Configuration file for the Sphinx documentation builder.
@@ -34,4 +33,3 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', '.ipynb_checkpoints']
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_theme = 'sphinx_rtd_theme'
-html_static_path = ['_static']
