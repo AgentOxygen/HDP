@@ -19,7 +19,7 @@ To learn more about the HDP and how to use it, check out the full ReadTheDocs do
 
 # Quick-Start
 
-The code block below showcases an example HDP workflow for a 400 GB high performance computer:
+The code block below showcases an example HDP workflow using generated sample data:
 
 ```
 import hdp
@@ -27,8 +27,8 @@ import numpy as np
 
 output_dir = "."
 
-sample_control_temp = hdp.utils.generate_test_control_dataarray()
-sample_warming_temp = hdp.utils.generate_test_warming_dataarray()
+sample_control_temp = hdp.utils.generate_test_control_dataarray(add_noise=True)
+sample_warming_temp = hdp.utils.generate_test_warming_dataarray(add_noise=True)
 
 baseline_measures = hdp.measure.format_standard_measures(
     temp_datasets=[sample_control_temp]
