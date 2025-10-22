@@ -22,8 +22,8 @@ def generate_sample_data(output_dir):
     if not isdir(output_dir):
         raise RuntimeError(f"Output directory '{output_dir}' does not exist!")
 
-    sample_control_temp = hdp.utils.generate_test_control_dataarray()
-    sample_warming_temp = hdp.utils.generate_test_warming_dataarray()
+    sample_control_temp = hdp.utils.generate_test_control_dataarray(add_noise=True)
+    sample_warming_temp = hdp.utils.generate_test_warming_dataarray(add_noise=True)
 
     baseline_measures = hdp.measure.format_standard_measures(
         temp_datasets=[sample_control_temp]
