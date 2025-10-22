@@ -7,5 +7,5 @@ Contents
 .. toctree::
 
     user
-    tests
+    dev_guide
     api
