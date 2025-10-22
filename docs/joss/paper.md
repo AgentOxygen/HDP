@@ -63,9 +63,9 @@ The `HDP` allows the user to test a range of parameter values: for example, heat
 
 ## Diagnostic Notebooks and Figures
 
-The automatic workflow compiles a "figure deck" containing diagnostic plots for multiple heatwave parameters and input variables. To simplify this process, figure decks are serialized and stored in a single Jupyter Notebook separated into descriptive sections. Basic descriptions are included in markdown cells at the top of each figure. The `HDPNotebook` class in `hdp.graphics.notebook` is utilized to facilitate the generation of these Notebooks internally, but can be called through the API as well to build custom notebooks. An example of a Notebook of the standard figure deck is shown in Figure \ref{fig:notebook}.
+The automatic workflow compiles a "figure deck" containing diagnostic plots for multiple heatwave parameters and input variables. To simplify this process, figure decks are serialized and stored in a single Jupyter Notebook separated into descriptive sections. Basic descriptions are included in markdown cells at the top of each figure. The `HDPNotebook` class in `hdp.graphics.notebook` is utilized to facilitate the generation of these Notebooks internally, but can be called through the API as well to build custom notebooks. An example figure of HWF from the sample figure deck is shown in Figure \ref{fig:notebook}.
 
-![Example of an HDP standard figure deck \label{fig:notebook}](HDP_Notebook_Example.png)
+![Example of an HDP standard figure deck \label{fig:notebook}](ExampleFigure.png)
 
 # Ongoing Work
 

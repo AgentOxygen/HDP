@@ -101,7 +101,7 @@ def heat_index_map_wrapper(ds):
                                dask="parallelized",
                                input_core_dims=[[], []],
                                output_core_dims=[[]],
-                               output_dtypes=[float],
+                               output_dtypes=[np.float32],
                                dask_gufunc_kwargs={
                                    'allow_rechunk': False
                                })
@@ -121,13 +121,11 @@ def apply_heat_index(temp: xarray.DataArray, rh: xarray.DataArray) -> xarray.Dat
     """
     assert temp.attrs["units"] == "degF"
     assert rh.attrs["units"] == "%"
-    hi_da = xarray.map_blocks(
-        heat_index_map_wrapper,
+    hi_da = heat_index_map_wrapper(
         xarray.Dataset({
             "temp": temp,
             "rh": rh
         }),
-        template=temp
     )
     hi_da = hi_da.rename(f"{temp.name}_hi")
     hi_da.attrs["baseline_variable"] = hi_da.name
