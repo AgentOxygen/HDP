@@ -4,7 +4,7 @@ cartopy
 numpy
 numba
 nc_time_axis
-dask
+dask[distributed]
 zarr
 netCDF4
 tqdm
