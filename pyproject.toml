@@ -30,15 +30,12 @@ dependencies = [
   "ipywidgets",
   "nbformat"
 ]
-keywords = ["HDP", "heat", "heatwave", "heatwave diagnostics package", "climate", "climate model", "timeseries", "heatwave metrics", "diagnostics"]
 
+keywords = ["HDP", "heat", "heatwave", "heatwave diagnostics package", "climate", "climate model", "timeseries", "heatwave metrics", "diagnostics"]
 
 [project.urls]
 Homepage = "https://github.com/AgentOxygen/HDP"
 Issues = "https://github.com/AgentOxygen/HDP"
-
-[project.scripts]
-hdp = "hdp.cli:main"
 
 [tool.setuptools]
 packages = ["hdp"]
