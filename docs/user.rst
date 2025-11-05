@@ -37,7 +37,11 @@ Below is example code that computes heatwave metrics for multiple measures, thre
 
 .. code-block:: python
 
-    import hdp
+    from hdp.graphics.notebook import create_notebook
+    import hdp.utils
+    import hdp.measure
+    import hdp.threshold
+    import hdp.metric
     import numpy as np
 
     output_dir = "."
