@@ -65,6 +65,21 @@ sample_warming_temp.attrs["description"] = "Mock temperature dataset with warmin
 sample_warming_temp.to_netcdf(f"{output_dir}/sample_warming_temp.nc", mode='w')
 ```
 
+# Unit Tests
+
+The testing suite can be run by cloning the repository, building the docker image, and then running the container:
+
+```
+git clone git@github.com:AgentOxygen/HDP.git
+cd HDP
+docker build --rm -t hdp .
+docker run -v .:/project -it hdp
+```
+
+Tests are also run [automatically in the GitHub Actions](https://github.com/AgentOxygen/HDP/actions) to verify that commits pushed to the repository do not break existing functionality.
+
+All tests are written using [pytest](https://docs.pytest.org/en/stable/) and are described in the `hdp/tests/` directory.
+
 # Contributing
 
 Please report any bugs, ask questions, and make suggestions through the [GitHub Issues form of this repository](https://github.com/AgentOxygen/HDP/issues).
