@@ -7,7 +7,7 @@
 
 The Heatwave Diagnostics Package (HDP) is an open-source Python project that equips researchers with computationally-efficient tools to quantify heatwave metrics across multiple parameters for daily, gridded data produced by climate model large ensembles.
 
-The HDP offers functions that leverage Xarray, Dask, and Numba to take full advantage of the available hardware capabilites. These functions have been optimized to both run quickly in serial execution and scale effectively in parallel and distributed computing systems. In addition to computing heatwave datasets, the HDP also contains several plotting functions that generate summary figures for quickly evaluating changes in heatwave patterns spatially, temporally, and across the heatwave parameter space. The user can choose to use the resulting matplotlib figures as base templates for creating their own custom figures or opt to create a standardized deck of figures that broadly summarize the different metric trends. All graphical plots can then be stored in a Jupyter notebook for easy viewing and consolidated storage.
+The HDP offers functions that leverage Xarray, Dask, and Numba to take full advantage of the available hardware capabilities. These functions have been optimized to both run quickly in serial execution and scale effectively in parallel and distributed computing systems. In addition to computing heatwave datasets, the HDP also contains several plotting functions that generate summary figures for quickly evaluating changes in heatwave patterns spatially, temporally, and across the heatwave parameter space. The user can choose to use the resulting matplotlib figures as base templates for creating their own custom figures or opt to create a standardized deck of figures that broadly summarizes the different metric trends. All graphical plots can then be stored in a Jupyter notebook for easy viewing and consolidated storage.
 
 # Why create the HDP?
 
@@ -94,3 +94,22 @@ I would like to acknowledge the following people for their contributions to this
 3. Dr. Tammas Loughran for developing [ehfheatwaves](https://github.com/tammasloughran/ehfheatwaves) which served as a comparable project and informed the software design of the HDP.
 4. Dr. Ifeanyi Nduka for his design input and expertise in quantifying extreme heat.
 5. (Soon to be Dr.) Sebastian Utama for helping me debug my code and brainstorm ideas.
+
+# Citation
+
+If our software package helps you with your research, please consider citing it:
+
+ - Cummins, C., & Persad, G. (2025). HDP: Heatwave Diagnostics Package [Software]. Available from https://github.com/AgentOxygen/HDP.
+
+In BibTeX:
+
+```
+@Manual{         cummins2025hdp,
+ title         = {{HDP}: Heatwave Diagnostics Package (Software)},
+ author        = {Cameron Cummins and Geeta Persad},
+ year          = {2025},
+ url           = {https://github.com/AgentOxygen/HDP}
+}
+```
+
+This software citation is provided while the JOSS paper remains under review. The citations above follow guidelines described in [this article](https://www.software.ac.uk/publication/how-cite-and-describe-software) by the Software Sustainability Institute.
