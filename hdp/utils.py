@@ -36,13 +36,13 @@ def get_func_description(func):
     return desc
 
 
-def generate_test_warming_dataarray(start_date="2000-01-01", end_date="2049-12-31", grid_shape=(12, 10), warming_period=100, add_noise=False):
+def generate_test_warming_dataarray(start_date="2000-01-01", end_date="2049-12-31", grid_shape=(2, 3), warming_period=100, add_noise=False):
     base_data = generate_test_control_dataarray(start_date=start_date, end_date=end_date, grid_shape=grid_shape, add_noise=add_noise)
     base_data += xarray.DataArray(np.arange(base_data["time"].size) / (365*warming_period), dims=["time"], coords={"time": base_data["time"]})
     return base_data
 
 
-def generate_test_rh_dataarray(start_date="2000-01-01", end_date="2049-12-31", grid_shape=(12, 10)):
+def generate_test_rh_dataarray(start_date="2000-01-01", end_date="2049-12-31", grid_shape=(2, 3)):
     base_data = generate_test_control_dataarray(start_date=start_date, end_date=end_date, grid_shape=grid_shape)
     base_data = abs(base_data / base_data.max() - 0.3)
     base_data = base_data.rename("test_rh_data")
@@ -50,7 +50,7 @@ def generate_test_rh_dataarray(start_date="2000-01-01", end_date="2049-12-31", g
     return base_data
 
 
-def generate_test_control_dataarray(start_date="1700-01-01", end_date="1749-12-31", grid_shape=(12, 10), add_noise=False, seed=0):
+def generate_test_control_dataarray(start_date="1700-01-01", end_date="1749-12-31", grid_shape=(2, 3), add_noise=False, seed=0):
     time_values = xarray.date_range(
         start=start_date,
         end=end_date,
