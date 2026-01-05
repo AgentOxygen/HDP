@@ -6,6 +6,9 @@ Contents
 
 .. toctree::
 
-    user
+    overview
+    install
+    examples
     dev_guide
+    testing
     api

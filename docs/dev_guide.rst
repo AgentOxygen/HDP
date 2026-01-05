@@ -10,6 +10,8 @@ Thank you for taking interesting in further developing the HDP! To get started, 
 
 We provide a few development workflow options:
 
+.. _docker_setup:
+
 Docker (preferred)
 ------------------
 

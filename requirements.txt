@@ -1,4 +1,4 @@
-furo
+netCDF4
 xarray
 cartopy
 numpy
@@ -6,10 +6,12 @@ numba
 nc_time_axis
 dask[distributed]
 zarr
-netCDF4
 tqdm
 ipywidgets
 nbformat
 sphinx
 sphinx-autobuild
 sphinx-rtd-theme
+s3fs
+pytest
+furo
