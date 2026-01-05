@@ -1,14 +1,17 @@
-FROM python:3.12-slim
+FROM python:latest
 
 WORKDIR /project
 
+RUN adduser --disabled-password hdp
+
 COPY . .
 
-RUN pip install --upgrade pip
-RUN pip install -r requirements.txt
-RUN pip install pytest sphinx sphinx-autobuild
+RUN pip install --upgrade pip \
+    && pip install -r requirements.txt \
+    && pip install -e .
 
-RUN pip install -e .
+RUN chown -R hdp:hdp /project
 
+USER hdp
 
 CMD ["pytest", "-v", "hdp/tests/"]
