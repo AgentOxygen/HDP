@@ -1,3 +1,6 @@
+import matplotlib
+matplotlib.use('Agg') # Non-interactive backend
+
 from dask.distributed import Client, LocalCluster
 import hdp.measure
 import hdp.threshold

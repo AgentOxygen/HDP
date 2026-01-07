@@ -9,6 +9,9 @@ Entry point for package.
 Developer: Cameron Cummins
 Contact: cameron.cummins@utexas.edu
 """
+import matplotlib
+matplotlib.use('Agg') # Non-interactive backend
+
 from hdp.graphics.notebook import create_notebook
 from os.path import isdir
 import hdp.measure
