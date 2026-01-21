@@ -3,7 +3,7 @@ xarray
 cartopy
 numpy
 numba
-nc_time_axis
+nc-time-axis
 dask[distributed]
 zarr
 tqdm
