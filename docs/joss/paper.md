@@ -17,7 +17,7 @@ authors:
 affiliations:
  - name: Department of Earth and Planetary Sciences, Jackson School of Geoscience, The University of Texas at Austin, Austin, TX, USA
    index: 1
-date: 18 February 2025
+date: 22 January 2026
 bibliography: paper.bib
 ---
 
@@ -28,9 +28,9 @@ The heatwave diagnostics package (`HDP`) is a Python package that provides the c
 # Statement of Need
 
 Accurate quantification of the evolution of heatwave trends in climate model output is critical for evaluating future changes in hazard. The framework for indexing heatwaves by comparing a time-evolving measure of heat against some seasonally-varying percentile threshold is well-established in the literature (@baldwin_temporally_2019; @schoetter_changes_2015; @acero_changes_2024; @argueso_seasonal_2016).
-Metrics such as heatwave frequency and duration are commonly used in hazard assessments, but there are few centralized tools and no universal heatwave criteria for computing them. This has resulted in parameter heterogeneity across the literature and has prompted some studies to adopt multiple definitions to build robustness (@perkins_review_2015). However, many studies rely on only a handful of metrics and definitions due to the excessive data management and computational burden of sampling a greater number of parameters (@perkins_measurement_2013). The introduction of large ensembles has further complicated the development of software tools, which have remained mostly specific to individual studies. Some generalized tools have been developed to address this problem, but they are often not explicitly optimized for evaluating the potential sensitivities of heatwave hazard to the choices of heat measure, extreme heat threshold, and heatwave definition.
+Metrics such as heatwave frequency and duration are commonly used in hazard assessments, but there are few centralized tools and no universal heatwave criteria for computing them. This has resulted in parameter heterogeneity across the literature and has prompted researchers to adopt multiple definitions to build robustness (@perkins_review_2015). Although studies could attempt to report metrics across larger parameter spaces, the excessive data management costs and computational burden of sampling more parameters makes it increasingly complex and expensive (@perkins_measurement_2013). The introduction of large ensembles has further exacerbated this issue. New heatwave packages have been developed to simplify the analysis, but they are often not optimized specifically for evaluating the potential sensitivities of heatwave hazard to the selections of heat measure, extreme heat threshold, and heatwave definition.
 
-Development of the `HDP` was started in 2023 primarily to address the computational obstacles around handling terabyte-scale large ensembles, but quickly evolved to investigate new scientific questions around how the selection of characteristic heatwave parameters may impact hazard analysis. The `HDP` can provide insight into how the spatial-temporal response of heatwaves to climate perturbations depends on the choice of heatwave parameters. While other software packages primarly focus on calculating heatwave metrics for individual parameter selections (e.g. `heatwave3`[@hw], `xclim`[@xclim], `ehfheatwaves`[@ehfheatwaves]), the `HDP` builds on these tools by optimizing the computation to evaluate metrics across large ranges of the parameter space.
+Development of the `HDP` was initially focused on addressing the challenges of handling terabyte-scale ensembles, but then quickly expanded to investigate new scientific questions around how the selection of characteristic heatwave parameters may impact hazard analysis. The `HDP` can provide insight into how the spatial-temporal response of heatwaves to climate perturbations depends on the choice of heatwave parameters. While other software packages primarly focus on calculating heatwave metrics for individual parameter selections (e.g. `heatwave3`[@hw], `xclim`[@xclim], `ehfheatwaves`[@ehfheatwaves]), the `HDP` builds on these tools be efficiently evaluating metrics across large ranges of the parameter space.
 
 # Key Features
 
