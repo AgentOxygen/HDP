@@ -12,8 +12,10 @@ tags:
 authors:
  - name: Cameron Cummins
    affiliation: 1
+   orcid: 0000-0002-5526-966X
  - name: Geeta Persad
    affiliation: 1
+   orcid: 0000-0003-4690-0867
 affiliations:
  - name: Department of Earth and Planetary Sciences, Jackson School of Geoscience, The University of Texas at Austin, Austin, TX, USA
    index: 1
