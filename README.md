@@ -99,17 +99,20 @@ I would like to acknowledge the following people for their contributions to this
 
 If our software package helps you with your research, please consider citing it:
 
- - Cummins, C., & Persad, G. (2025). HDP: Heatwave Diagnostics Package [Software]. Available from https://github.com/AgentOxygen/HDP.
-
-In BibTeX:
+ - Cummins, C., & Persad, G. (2026). Heatwave Diagnostics Package: Efficiently Compute Heatwave Metrics Across Parameter Spaces. Journal of Open Source Software, 11(118), 8111, https://doi.org/10.21105/joss.08111
 
 ```
-@Manual{         cummins2025hdp,
- title         = {{HDP}: Heatwave Diagnostics Package (Software)},
- author        = {Cameron Cummins and Geeta Persad},
- year          = {2025},
- url           = {https://github.com/AgentOxygen/HDP}
-}
+@article{
+    Cummins2026,
+    doi = {10.21105/joss.08111},
+    url = {https://doi.org/10.21105/joss.08111},
+    year = {2026},
+    publisher = {The Open Journal},
+    volume = {11},
+    number = {118},
+    pages = {8111},
+    author = {Cummins, Cameron and Persad, Geeta},
+    title = {Heatwave Diagnostics Package: Efficiently Compute Heatwave Metrics Across Parameter Spaces},
+    journal = {Journal of Open Source Software}
+} 
 ```
-
-This software citation is provided while the JOSS paper remains under review. The citations above follow guidelines described in [this article](https://www.software.ac.uk/publication/how-cite-and-describe-software) by the Software Sustainability Institute.
