@@ -584,6 +584,9 @@ def compute_metrics_io(output_path: str,
     else:
         measure_data = xarray.open_dataset(measure_path)[measure_var]
 
+    # The heatwave indexing requires the full time axis in a single chunk (see compute_individual_metrics).
+    measure_data = measure_data.chunk(dict(time=-1))
+
     if threshold_path.suffix == ".zarr" and threshold_path.is_dir():
         threshold_data = xarray.open_zarr(threshold_path)[threshold_var]
     else:
