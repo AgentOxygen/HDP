@@ -17,7 +17,7 @@ Existing tools used to quantify heatwave metrics (such as ehfheatwaves, heatwave
 
 To install the HDP, activate your preferred Python environment (conda, venv, uv, etc.) and use the Python Package Index (PyPI) `pip install` command:
 
-```
+```bash
 pip install hdp-python
 ```
 
@@ -29,7 +29,7 @@ To learn more about the HDP and how to use it, check out the full ReadTheDocs do
 
 The code block below showcases an example HDP workflow using generated sample data:
 
-```
+```python
 from hdp.graphics.notebook import create_notebook
 import hdp.utils
 import hdp.measure
@@ -87,7 +87,7 @@ This text file serves as a entry point for LLMs to learn how to accurately use t
 
 The testing suite can be run by cloning the repository, building the docker image, and then running the container:
 
-```
+```bash
 git clone git@github.com:AgentOxygen/HDP.git
 cd HDP
 docker build --rm -t hdp .
@@ -119,7 +119,7 @@ If our software package helps you with your research, please consider citing it:
 
  - Cummins, C., & Persad, G. (2026). Heatwave Diagnostics Package: Efficiently Compute Heatwave Metrics Across Parameter Spaces. Journal of Open Source Software, 11(118), 8111, https://doi.org/10.21105/joss.08111
 
-```
+```bibtex
 @article{
     Cummins2026,
     doi = {10.21105/joss.08111},
