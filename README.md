@@ -65,6 +65,16 @@ sample_warming_temp.attrs["description"] = "Mock temperature dataset with warmin
 sample_warming_temp.to_netcdf(f"{output_dir}/sample_warming_temp.nc", mode='w')
 ```
 
+# LLM Support
+
+The HDP is designed to support LLM-assisted development workflows.
+
+If you are using Claude, ChatGPT, Gemini, or any other LLM service, point the coding assistant to the `llms.txt` file or drop in the following URL if you are using a web interface:
+
+[https://raw.githubusercontent.com/AgentOxygen/HDP/refs/heads/main/llms.txt](https://raw.githubusercontent.com/AgentOxygen/HDP/refs/heads/main/llms.txt)
+
+This text file serves as a entry point for LLMs to learn how to accurately use the HDP via markdown skills, isolated examples, and code snippets.
+
 # Unit Tests
 
 The testing suite can be run by cloning the repository, building the docker image, and then running the container:
