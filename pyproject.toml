@@ -42,5 +42,5 @@ packages = ["hdp"]
 
 [tool.setuptools.package-data]
 hdp = [
-    "graphics/pacl.mplstyle"
+    "graphics/hdp.mplstyle"
 ]
