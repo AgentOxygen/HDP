@@ -3,7 +3,7 @@ Overview
 
 What is the HDP?
 ----------------
-The Heatwave Diagnostics Package (HDP) is a collection of Python tools for computing heatwave metrics and generating summary figures. Functions can be imported in Jupyter notebooks and Python scripts or called in the terminal using the command line interface (CLI). All data uses `xarray <https://docs.xarray.dev/en/stable/>`_ data structures and can be saved to disk as either Zarr stores (default) or netCDF datasets. Summary figures can be generated to describe the output and can be saved to disk in Jupyter notebooks.
+The Heatwave Diagnostics Package (HDP) is a collection of Python tools for computing heatwave metrics and generating summary figures. Functions can be imported in Jupyter notebooks and Python scripts. All data uses `xarray <https://docs.xarray.dev/en/stable/>`_ data structures and can be saved to disk as either Zarr stores (default) or netCDF datasets. Summary figures can be generated to describe the output and can be saved to disk in Jupyter notebooks.
 
 The HDP workflow follows three steps:
 
