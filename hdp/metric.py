@@ -3,6 +3,8 @@ import numpy as np
 import cftime
 import numba as nb
 import datetime
+from os import makedirs
+from pathlib import Path
 from hdp.utils import get_version, add_history
 from tqdm.auto import tqdm
 import dask.array as da
@@ -529,7 +531,8 @@ def compute_metrics_io(output_path: str,
                        threshold_path: str,
                        hw_definitions: list,
                        include_threshold: bool=False,
-                       override_threshold_var: str=None) -> None:
+                       override_threshold_var: str=None,
+                       overwrite: bool=False) -> None:
     """
     Computes heatwave metrics from path inputs instead of manually supplied xarray Datasets/DataArrays (automates reading from and writing to disk).
     Resulting metrics are written directly to disk instead of holding in memory.
@@ -548,6 +551,8 @@ def compute_metrics_io(output_path: str,
     :type include_threshold: bool
     :param override_threshold_var: (Optional) Override threshold variable to use when computing metrics. If left unspecified, the format "threshold_{measure_var}" will be used.
     :type override_threshold_var: str
+    :param overwrite: (Optional) Whether or not to overwrite an existing dataset at the output_path. Defaults to False.
+    :type overwrite: bool
     :return: None
     :rtype: None
     """
@@ -555,11 +560,13 @@ def compute_metrics_io(output_path: str,
     measure_path = Path(measure_path)
     threshold_path = Path(threshold_path)
     check_variables = True
-    
+
     if override_threshold_var is None:
         threshold_var = f"threshold_{measure_var}"
         check_variables = False
-    
+    else:
+        threshold_var = override_threshold_var
+
     if output_path.exists() and not overwrite:
         raise FileExistsError(f"Overwrite parameter set to False and file exists at '{output_path}'.")
 
@@ -572,12 +579,12 @@ def compute_metrics_io(output_path: str,
     if output_path.suffix not in [".zarr", ".nc"]:
         raise ValueError(f"File type '{output_path.suffix}' from '{output_path}' not supported.")
 
-    if measure_path.suffix == ".zarr" and measure_path.isdir():
+    if measure_path.suffix == ".zarr" and measure_path.is_dir():
         measure_data = xarray.open_zarr(measure_path)[measure_var]
     else:
         measure_data = xarray.open_dataset(measure_path)[measure_var]
-    
-    if threshold_path.suffix == ".zarr" and threshold_path.isdir():
+
+    if threshold_path.suffix == ".zarr" and threshold_path.is_dir():
         threshold_data = xarray.open_zarr(threshold_path)[threshold_var]
     else:
         threshold_data = xarray.open_dataset(threshold_path)[threshold_var]

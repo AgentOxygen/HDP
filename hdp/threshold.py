@@ -275,7 +275,7 @@ def compute_threshold_io(baseline_path: str,
     if output_path.suffix not in [".zarr", ".nc"]:
         raise ValueError(f"File type '{output_path.suffix}' from '{output_path}' not supported.")
     
-    if baseline_path.suffix == ".zarr" and baseline_path.isdir():
+    if baseline_path.suffix == ".zarr" and baseline_path.is_dir():
         baseline_data = xarray.open_zarr(baseline_path)[baseline_var]
     else:
         baseline_data = xarray.open_dataset(baseline_path)[baseline_var]
