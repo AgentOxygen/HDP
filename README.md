@@ -13,6 +13,14 @@ The HDP offers functions that leverage Xarray, Dask, and Numba to take full adva
 
 Existing tools used to quantify heatwave metrics (such as ehfheatwaves, heatwave3, nctoolkit) were not designed to sample large sections of the heatwave parameter space. Many of these tools struggle to handle the computational burden of analyzing terabyte-scale datasets and do not offer a complete workflow for generating heatwave diagnostics from daily, gridded climate model output. The HDP expands upon this work to empower the user to conduct parameter-sampling analysis and reduce the computational burden of calculating heatwave metrics from increasingly large model output.
 
+# Installation
+
+To install the HDP, activate your preferred Python environment (conda, venv, uv, etc.) and use the Python Package Index (PyPI) `pip install` command:
+
+```
+pip install hdp-python
+```
+
 # Documentation
 
 To learn more about the HDP and how to use it, check out the full ReadTheDocs documentation at https://hdp.readthedocs.io/en/latest/user.html#.
