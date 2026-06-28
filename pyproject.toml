@@ -37,6 +37,15 @@ Homepage = "https://github.com/AgentOxygen/HDP"
 Documentation = "https://hdp.readthedocs.io/"
 Issues = "https://github.com/AgentOxygen/HDP"
 
+[tool.pytest.ini_options]
+# The container runs pytest as an unprivileged user without a writable cache dir,
+# so disable the cache to avoid PytestCacheWarning permission errors.
+addopts = "-p no:cacheprovider"
+# ax.coastlines() downloads Natural Earth data on first use; this is expected.
+filterwarnings = [
+    "ignore::cartopy.io.DownloadWarning",
+]
+
 [tool.setuptools]
 packages = ["hdp"]
 
