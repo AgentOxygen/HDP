@@ -102,7 +102,7 @@ All tests are written using [pytest](https://docs.pytest.org/en/stable/) and are
 
 Please report any bugs, ask questions, and make suggestions through the [GitHub Issues form of this repository](https://github.com/AgentOxygen/HDP/issues).
 
-Check out the [Developer's Guide](https://hdp.readthedocs.io/en/latest/dev_guide.html) for information on how to setup a development environment and make changes to the HDP.
+See the [Contributing Guidelines](CONTRIBUTING.md) for how to set up a development environment, run the tests, and submit changes. The [Developer's Guide](https://hdp.readthedocs.io/en/latest/dev_guide.html) contains additional detail.
 
 # Acknowledgements
 
@@ -115,7 +115,7 @@ I would like to acknowledge the following people for their contributions to this
 
 # Citation
 
-If our software package helps you with your research, please consider citing it:
+If our software package helps you with your research, please consider citing it. GitHub also generates a citation from the repository's [CITATION.cff](CITATION.cff) via the **Cite this repository** button.
 
  - Cummins, C., & Persad, G. (2026). Heatwave Diagnostics Package: Efficiently Compute Heatwave Metrics Across Parameter Spaces. Journal of Open Source Software, 11(118), 8111, https://doi.org/10.21105/joss.08111
 

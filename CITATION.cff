@@ -1,0 +1,40 @@
+cff-version: 1.2.0
+title: "Heatwave Diagnostics Package (HDP)"
+message: "If you use this software, please cite both the software and the accompanying JOSS paper below."
+type: software
+authors:
+  - given-names: Cameron
+    family-names: Cummins
+    email: cameron.cummins@utexas.edu
+    affiliation: The University of Texas at Austin
+  - given-names: Geeta
+    family-names: Persad
+    affiliation: The University of Texas at Austin
+repository-code: "https://github.com/AgentOxygen/HDP"
+url: "https://hdp.readthedocs.io/"
+license: MIT
+version: 1.0.2
+keywords:
+  - heatwave
+  - heatwave diagnostics
+  - climate
+  - climate model
+  - heatwave metrics
+  - diagnostics
+preferred-citation:
+  type: article
+  title: "Heatwave Diagnostics Package: Efficiently Compute Heatwave Metrics Across Parameter Spaces"
+  authors:
+    - given-names: Cameron
+      family-names: Cummins
+    - given-names: Geeta
+      family-names: Persad
+  doi: "10.21105/joss.08111"
+  url: "https://doi.org/10.21105/joss.08111"
+  journal: "Journal of Open Source Software"
+  publisher:
+    name: "The Open Journal"
+  year: 2026
+  volume: 11
+  issue: 118
+  start: 8111
