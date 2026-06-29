@@ -1,6 +1,7 @@
 # HDP: Heatwave Diagnostics Package
 
 [![Available on pypi](https://img.shields.io/pypi/v/HDP-python.svg)](https://pypi.org/project/HDP-python/)
+[![Run Unit Tests](https://github.com/AgentOxygen/HDP/actions/workflows/unit_tests.yml/badge.svg)](https://github.com/AgentOxygen/HDP/actions/workflows/unit_tests.yml)
 [![Docs](https://readthedocs.org/projects/hdp/badge/?version=latest)](https://hdp.readthedocs.io/en/latest/)
 ![GitHub License](https://img.shields.io/github/license/AgentOxygen/HDP)
 [![status](https://joss.theoj.org/papers/071c99a9e9f52348df4de69ccdee5133/status.svg)](https://joss.theoj.org/papers/071c99a9e9f52348df4de69ccdee5133)
