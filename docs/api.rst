@@ -30,3 +30,9 @@ Plotting/Graphics Functions
 
 .. automodule:: hdp.graphics.winkel_tripel
    :members:
+
+Utility Functions
+-----------------
+
+.. automodule:: hdp.utils
+   :members:
