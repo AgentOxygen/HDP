@@ -7,14 +7,14 @@ TEMPERATURE_UNITS = ['degC', 'degK', 'degF', 'C', 'K', 'F']
 HUMIDITY_UNITS = ["%", "g/g"]
 
 
-def kelvin_to_celsius(temp: float) -> float:
+def kelvin_to_celsius(temp: xarray.DataArray) -> xarray.DataArray:
     """
     Converts from temperature value from Kelvin to Celsius.
-    
-    :param temp: Temperature value in degrees Kelvin
-    :type temp: float
-    :return: Temperature value in degrees Celsius
-    :rtype: float
+
+    :param temp: Temperature DataArray in degrees Kelvin
+    :type temp: xarray.DataArray
+    :return: Temperature DataArray in degrees Celsius
+    :rtype: xarray.DataArray
     """
     attrs = temp.attrs
     temp -= 273.15
@@ -24,14 +24,14 @@ def kelvin_to_celsius(temp: float) -> float:
     return temp
 
 
-def fahrenheit_to_celsius(temp: float) -> float:
+def fahrenheit_to_celsius(temp: xarray.DataArray) -> xarray.DataArray:
     """
     Converts from temperature value from Fahrenheit to Celsius.
-    
-    :param temp: Temperature value in degrees Fahrenheit
-    :type temp: float
-    :return: Temperature value in degrees Celsius
-    :rtype: float
+
+    :param temp: Temperature DataArray in degrees Fahrenheit
+    :type temp: xarray.DataArray
+    :return: Temperature DataArray in degrees Celsius
+    :rtype: xarray.DataArray
     """
     attrs = temp.attrs
     temp = (temp - 32) / 1.8
@@ -41,14 +41,14 @@ def fahrenheit_to_celsius(temp: float) -> float:
     return temp
 
 
-def celsius_to_fahrenheit(temp: float) -> float:
+def celsius_to_fahrenheit(temp: xarray.DataArray) -> xarray.DataArray:
     """
     Converts from temperature value from Celsius to Fahrenheit.
-    
-    :param temp: Temperature value in degrees Celsius
-    :type temp: float
-    :return: Temperature value in degrees Fahrenheit
-    :rtype: float
+
+    :param temp: Temperature DataArray in degrees Celsius
+    :type temp: xarray.DataArray
+    :return: Temperature DataArray in degrees Fahrenheit
+    :rtype: xarray.DataArray
     """
     attrs = temp.attrs
     temp = (temp * 1.8) + 32
