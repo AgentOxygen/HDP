@@ -210,8 +210,8 @@ def compute_thresholds(baseline_dataset: list[xarray.DataArray], percentiles: np
     Computes percentile and, optionally, fixed value thresholds for a list of baseline measurements.
 
 
-    :param baseline_data: List of DataArrays with baseline measurements to calculate thresholds from.
-    :type baseline_data: list[xarray.DataArray]
+    :param baseline_dataset: Dataset containing baseline measurements to calculate thresholds from, where each data variable is used to compute a threshold.
+    :type baseline_dataset: xarray.Dataset
     :param percentiles: List of percentiles to calculate for each baseline.
     :type percentiles: np.ndarray
     :param no_season: (Optional) Instead of taking window samples at each day of year to get a seasonally-varying threshold, calculate a single percentile for the entire year. Defaults to False.
