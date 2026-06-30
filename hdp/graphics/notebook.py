@@ -117,7 +117,9 @@ def create_notebook(hw_ds):
         notebook.add_figure_cell(plot_multi_measure_metric_comparisons(hw_ds), section_name, alt_text=f"{section_name}")
         
         index += 1
-        for metric in tqdm(list(hw_ds.data_vars), desc="Generating figures:"):
+        # This is fragile and should be improved to use metadata
+        metric_names = [name for name in list(hw_ds.data_vars) if len(name.split(".")) >= 3]
+        for metric in tqdm(metric_names, desc="Generating figures:"):
             section_name = f"Figures {index}-{metric}"
             
             notebook.create_section(section_name)
