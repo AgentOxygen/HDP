@@ -121,7 +121,12 @@ def add_percentile_colorbar(ax, percentiles):
 
 
 def get_metric_name(metric_da):
-    return metric_da.name.split(".")[2]
+    if len(metric_da.name.split(".")) >= 3:
+        return metric_da.name.split(".")[2]
+    raise ValueError(
+        f"Expected variable name '{metric_da.name}' to follow the "
+        "'{measure}.{threshold}.{metric}' naming convention."
+    )
 
 
 def get_unique_metric_names(hw_ds):
