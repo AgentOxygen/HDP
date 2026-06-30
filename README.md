@@ -24,7 +24,7 @@ pip install hdp-python
 
 # Documentation
 
-To learn more about the HDP and how to use it, check out the full ReadTheDocs documentation at https://hdp.readthedocs.io/en/latest/user.html#.
+To learn more about the HDP and how to use it, check out the full ReadTheDocs documentation at https://hdp.readthedocs.io/en/latest/overview.html
 
 # Quick-Start
 
