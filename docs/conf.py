@@ -1,6 +1,7 @@
 import sys
 import os
 import hdp
+from importlib.metadata import version as _get_version
 
 # Configuration file for the Sphinx documentation builder.
 #
@@ -11,9 +12,9 @@ import hdp
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = 'HDP'
-copyright = '2025, Cameron Cummins'
+copyright = '2026, Cameron Cummins'
 author = 'Cameron Cummins'
-release = 'Dev'
+release = _get_version('hdp_python')
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -21,8 +22,17 @@ release = 'Dev'
 extensions = [
     'sphinx.ext.duration',
     'sphinx.ext.autodoc',
-    'sphinx.ext.autosummary'
+    'sphinx.ext.autosummary',
+    'sphinx.ext.viewcode',
+    'sphinx.ext.intersphinx'
 ]
+
+intersphinx_mapping = {
+    'python': ('https://docs.python.org/3', None),
+    'numpy': ('https://numpy.org/doc/stable', None),
+    'xarray': ('https://docs.xarray.dev/en/stable', None),
+    'dask': ('https://docs.dask.org/en/stable', None),
+}
 
 templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', '.ipynb_checkpoints']
