@@ -1,7 +1,7 @@
-Interactive Explorer
+Interactive Parameter Explorer
 ====================
 
-This page lets you *feel* how the two key choices in the HDP workflow, namely the **threshold** and the **heatwave definition** ``[min_duration, max_break, max_subs]``, change which days count as a heatwave. It runs entirely in your browser on a small synthetic slice of data.
+This page lets you *feel* how the two key parameter choices in the HDP workflow, namely the **threshold** and the **heatwave definition** ``[min_duration, max_break, max_subs]``, change which days count as a heatwave. It runs entirely in your browser on a small synthetic slice of data.
 
 The top pane shows a 30-day temperature time series that rises and then falls with some daily noise, along with a flat threshold line. The bottom pane illustrates how heatwaves can are identified by a step classification:
 
@@ -14,7 +14,7 @@ Move the sliders to update the bottom pane. This mirrors how the HDP computes he
 .. note::
 
    The threshold here is a single value for illustration. In HDP, the threshold
-   is a **percentile computed for each day of the year** from a baseline measure,
+   is typically a **percentile computed for each day of the year** from a baseline measure,
    so the real cutoff varies across the calendar rather than being a flat line.
    See the :doc:`overview` for how thresholds are actually derived.
 
@@ -56,8 +56,8 @@ Move the sliders to update the bottom pane. This mirrors how the HDP computes he
      <div class="hdp-hw-metrics" id="hdp-hw-metrics"></div>
    </div>
 
-How to read this
-----------------
+Heatwave Metric Interpretations
+-------------------------------
 
 The four boxes below the panes report the HDP metrics computed **over this
 slice** (not per-season, as in a real run):
@@ -66,10 +66,3 @@ slice** (not per-season, as in a real run):
 * **HWF** - total heatwave days
 * **HWD** - length of the longest event
 * **HWA** - mean event length
-
-Try this: set the threshold so a stretch of days sits just above the line, then
-raise **Minimum heatwave length**. Short hot stretches drop from ``2`` back to
-``1`` once they no longer meet the minimum duration. Increasing **Max break days
-after start** lets a brief dip below the threshold stay *inside* a single event,
-while **Max subsequent events** controls how many such breaks can be bridged
-before a new event begins.
