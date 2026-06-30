@@ -1,0 +1,262 @@
+# HDP — Heatwave Diagnostics Package
+
+> HDP is an open-source Python package for computing **heatwave metrics** from daily,
+> gridded climate-model output (e.g. CMIP6 / large ensembles). Its distinguishing feature is
+> efficiently sampling a **parameter space** of heat *measures* × percentile *thresholds* ×
+> heatwave *definitions* in a single pass, built on xarray + Dask + Numba so it scales from a
+> laptop to an HPC cluster. It also generates standardized summary-figure decks as Jupyter
+> notebooks.
+
+This file is a self-contained context document for LLMs assisting users with the HDP. Everything
+needed to write correct workflows is inline below; deeper references are linked at the end.
+
+- **Package (PyPI):** `hdp-python` · **Import name:** `hdp` · **Version:** 1.0.2 · **Python:** ≥ 3.12.3
+- **License:** MIT · **Repo:** https://github.com/AgentOxygen/HDP · **Docs:** https://hdp.readthedocs.io
+- **Paper (cite this):** Cummins, C., & Persad, G. (2026). *Heatwave Diagnostics Package.* JOSS, 11(118), 8111. https://doi.org/10.21105/joss.08111
+
+---
+
+## Mental model: the 3-step workflow
+
+HDP always follows the same pipeline. Keep these terms straight:
+
+- **Measure** — a daily gridded heat variable (e.g. daily max/mean temperature `tas`/`tasmax`,
+  or a derived heat index). You provide two measures: a **baseline** and a **test**.
+- **Threshold** — a percentile of the *baseline* measure, computed per day-of-year (seasonally
+  varying). Defines "how hot is hot."
+- **Definition** — an integer triple describing what temporal pattern of hot days counts as a
+  heatwave event.
+- **Parameter space** — the full grid of (measures × thresholds/percentiles × definitions) that
+  HDP evaluates at once.
+
+```
+1. format measures   → hdp.measure.format_standard_measures([...])      # baseline + test
+2. compute thresholds → hdp.threshold.compute_thresholds(baseline, ...)  # percentiles of baseline
+3. compute metrics    → hdp.metric.compute_group_metrics(test, thr, defs)# test vs threshold
+(4. summary figures)  → create_notebook(metrics).save_notebook("out.ipynb")
+```
+
+The output of step 3 is a standard `xarray.Dataset` of the four heatwave metrics (HWF, HWN,
+HWD, HWA) over the parameter space — analyze or save it like any xarray object.
+
+---
+
+## Install & import
+
+```bash
+pip install hdp-python
+```
+
+```python
+import hdp.utils       # mock-data generators
+import hdp.measure     # format/convert input measures, heat index
+import hdp.threshold   # percentile thresholds
+import hdp.metric      # heatwave metrics
+from hdp.graphics.notebook import create_notebook  # figure decks
+import numpy as np
+```
+
+Core dependencies (auto-installed): numpy, `xarray>=2025.1.1`, cartopy, `numba>=0.60.0`,
+nc_time_axis, `dask[complete]`, zarr, netCDF4, tqdm, ipywidgets, nbformat. The cloud example
+below additionally needs `s3fs` and `pandas` (install separately).
+
+---
+
+## Core API
+
+### `hdp.measure.format_standard_measures(temp_datasets, rh=None) -> xarray.Dataset`
+Prepares raw temperature DataArrays for HDP. Validates/auto-converts units to °C, tags HDP
+metadata, and merges them into one Dataset.
+- `temp_datasets: list[xarray.DataArray]` — each must have `.name` and `.attrs["units"]`.
+- `rh: xarray.DataArray = None` — optional relative humidity; if given, also produces a heat-index
+  measure per temperature, named `"{temp.name}_hi"`.
+- Pass **one** measure per call when you want a clean baseline vs test split (call it twice).
+
+### `hdp.threshold.compute_thresholds(baseline_dataset, percentiles, no_season=False, rolling_window_size=7, fixed_value=None) -> xarray.Dataset`
+Computes seasonally-varying percentile thresholds for every variable in `baseline_dataset`
+(a formatted measure Dataset). Returns thresholds named `"{measure}_threshold"`.
+- `percentiles: np.ndarray` — fractions in `(0, 1)`, e.g. `np.arange(0.9, 1.0, 0.01)`.
+- `no_season=True` — single whole-year percentile instead of per-day-of-year windows.
+- `rolling_window_size=7` — day-of-year window radius source for the percentile sample.
+- Single-array variant: `hdp.threshold.compute_threshold(baseline_dataarray, percentiles, ...)`.
+- Path-based (read/write disk): `hdp.threshold.compute_threshold_io(baseline_path, baseline_var, output_path, percentiles, ..., overwrite=False)`.
+
+### `hdp.metric.compute_group_metrics(measures, thresholds, hw_definitions, include_threshold=False, check_variables=True) -> xarray.Dataset`
+Computes HWN/HWF/HWD/HWA for every compatible (measure, threshold) pair across all definitions
+and percentiles. Measures are matched to thresholds by the `baseline_variable` attribute.
+- `hw_definitions: list[list[int]]` — e.g. `[[3,0,0], [3,1,1], [4,0,0], [5,1,1]]` (see semantics below).
+- `include_threshold=True` — also embeds the threshold arrays in the output (can be large).
+- Single-pair variant: `hdp.metric.compute_individual_metrics(measure, threshold, hw_definitions, ...)`.
+- Path-based: `hdp.metric.compute_metrics_io(output_path, measure_path, measure_var, threshold_path, hw_definitions, ..., overwrite=False)`.
+
+### `create_notebook(metric_ds).save_notebook(path, title=None)`
+`from hdp.graphics.notebook import create_notebook`. Builds a standardized figure deck from a
+**metric** Dataset and writes it to a `.ipynb`. (Only `hdp_type == "metric"` datasets produce
+figures; measure/threshold inputs are currently no-ops.)
+
+### Plotting helpers — `hdp.graphics.figure`
+Return matplotlib Figures you can customize: `plot_metric_timeseries(metric_da)`,
+`plot_metric_decadal_maps(metric_da)`, `plot_metric_parameter_comparison(metric_da)`,
+`plot_multi_measure_metric_comparisons(metric_ds)`.
+
+### Mock data — `hdp.utils`
+For reproducible examples/tests (no downloads):
+`generate_test_control_dataarray(add_noise=False, grid_shape=(2,3))`,
+`generate_test_warming_dataarray(...)` (adds a warming trend), `generate_test_rh_dataarray(...)`.
+They return a `noleap`-calendar cftime DataArray named `test_temperature_data` with `units="degC"`,
+dims `(lon, lat, time)`, already chunked.
+
+---
+
+## Data conventions & gotchas (read before writing a workflow)
+
+- **Input DataArray requirements:** must have a `.name`, `.attrs["units"]` in
+  `{degC, degK, degF, C, K, F}`, and dims `time`, `lat`, `lon`. Units are auto-converted to °C.
+- **Time axis must be cftime** (the code reads `.dayofyr` and `.calendar` on timestamps). Use
+  `xarray.date_range(..., use_cftime=True)` / `xr.open_*(..., use_cftime=True)`.
+- **Time must be ONE contiguous chunk:** `da = da.chunk({"time": -1})`. Chunk over **space**
+  (`lat`/`lon`) instead — the heatwave indexing runs per-timeseries and the threshold step
+  requires the full time axis in one chunk. This is the single most common mistake.
+- **Percentiles** are fractions in `(0, 1)` (e.g. `0.9`), not `0–100`.
+- **Definition triple `[min_duration, max_break, max_subs]`** (stored as the `"a-b-c"` coord on
+  the `definition` dimension):
+  1. `min_duration` — minimum consecutive hot days to start a heatwave event.
+  2. `max_break` — maximum non-hot ("break") days allowed after the start before the event ends.
+  3. `max_subs` — maximum number of subsequent sub-events joined back across breaks.
+  Sampling many definitions in one run is HDP's core value — it avoids re-running the expensive
+  computation for each heatwave "type."
+- **The four metrics** (computed per heatwave season per year):
+  - `HWF` — Heatwave Frequency: number of heatwave **days** in the season.
+  - `HWN` — Heatwave Number: number of distinct heatwave **events**.
+  - `HWD` — Heatwave Duration: length (days) of the **longest** event.
+  - `HWA` — Heatwave Average: **mean** event length (days). *(Note: in the source `units`
+    attribute HWA/HWN are labeled "heatwave events"; HWA is actually a length in days.)*
+- **Seasons are hemisphere-aware and hard-coded:** Northern Hemisphere = boreal summer
+  May 1 – Oct 1; Southern Hemisphere = austral summer Nov 1 – Apr 1. Metrics are aggregated per
+  season-year, and leading/trailing **partial** seasons are dropped. The per-year `year`
+  dimension is renamed to `time` in the output.
+- **Output variable naming:** metric variables are `"{measure}.{threshold}.{metric}"` with `.`
+  as the delimiter, e.g. `test_temperature_data.test_temperature_data_threshold.HWF`. The
+  Dataset attrs `variable_naming_desc` / `variable_naming_delimeter` document this.
+- **Ensembles:** a `member` dimension is supported; for thresholds, members are concatenated
+  along time before computing percentiles.
+- **Saving:** `.to_zarr(path)` (default/faster) or `.to_netcdf(path)`. For zarr you may need
+  `zarr_format=2` for compatibility (see cloud example).
+- **Scaling:** for anything beyond toy data, start a Dask cluster *before* the HDP calls
+  (`LocalCluster` on one machine; an HPC-appropriate cluster otherwise).
+
+---
+
+## Full runnable example — sample data (no downloads)
+
+This is the canonical Quick-Start and is fully reproducible with bundled mock data.
+
+```python
+from hdp.graphics.notebook import create_notebook
+import hdp.utils
+import hdp.measure
+import hdp.threshold
+import hdp.metric
+import numpy as np
+
+output_dir = "."
+
+# 1. Inputs: a control (baseline) and a warming (test) temperature DataArray
+sample_control_temp = hdp.utils.generate_test_control_dataarray(add_noise=True)
+sample_warming_temp = hdp.utils.generate_test_warming_dataarray(add_noise=True)
+
+# 2. Format measures (validates units, converts to degC, tags HDP metadata)
+baseline_measures = hdp.measure.format_standard_measures(temp_datasets=[sample_control_temp])
+test_measures     = hdp.measure.format_standard_measures(temp_datasets=[sample_warming_temp])
+
+# 3. Thresholds from the baseline: 90th..99th percentiles
+percentiles = np.arange(0.9, 1.0, 0.01)
+thresholds_dataset = hdp.threshold.compute_thresholds(baseline_measures, percentiles)
+
+# 4. Heatwave metrics for the test measure across several definitions
+definitions = [[3,0,0], [3,1,1], [4,0,0], [4,1,1], [5,0,0], [5,1,1]]
+metrics_dataset = hdp.metric.compute_group_metrics(
+    test_measures, thresholds_dataset, definitions, include_threshold=True
+)
+metrics_dataset.to_netcdf(f"{output_dir}/sample_hw_metrics.nc", mode="w")
+
+# 5. Summary figure deck
+figure_notebook = create_notebook(metrics_dataset)
+figure_notebook.save_notebook(f"{output_dir}/sample_hw_summary_figures.ipynb")
+```
+
+---
+
+## Real-data example — CESM2 / CMIP6 from the cloud
+
+Reads CMIP6 daily `tas` for CESM2 directly from the public AWS S3 bucket, derives thresholds
+from a 1961–1990 historical baseline, and computes SSP3-7.0 metrics. Needs `s3fs` and `pandas`.
+Source: `docs/example_cmip_workflow/run_cmip_workflow.py`.
+
+```python
+from dask.distributed import Client, LocalCluster
+import hdp.measure, hdp.threshold, hdp.metric
+from hdp.graphics.notebook import create_notebook
+import xarray as xr, numpy as np, pandas as pd, s3fs
+
+# Start a Dask cluster BEFORE the HDP calls (tune to your machine)
+cluster = LocalCluster(n_workers=6, memory_limit="16GB", threads_per_worker=2, processes=True)
+client = Client(cluster)
+
+# Locate CESM2 daily tas (member r4i1p1f1) in the Pangeo CMIP6 index
+idx = pd.read_csv("https://cmip6-pds.s3.amazonaws.com/pangeo-cmip6.csv")
+idx = idx.query("table_id=='day' & source_id=='CESM2'")
+idx = idx[idx["member_id"] == "r4i1p1f1"]
+ssp_info  = idx.query("experiment_id=='ssp370' & variable_id=='tas'")
+base_info = idx.query("experiment_id=='historical' & variable_id=='tas'")
+
+fs = s3fs.S3FileSystem(anon=True)
+ssp370_tas   = xr.open_zarr(fs.get_mapper(ssp_info["zstore"].iloc[0]),  consolidated=True)["tas"]
+baseline_tas = xr.open_zarr(fs.get_mapper(base_info["zstore"].iloc[0]), consolidated=True)["tas"]
+
+# REQUIRED: one contiguous time chunk; chunk over space. Trim baseline to 30 years.
+ssp370_tas   = ssp370_tas.chunk(dict(time=-1, lat=24, lon=18))
+baseline_tas = baseline_tas.chunk(dict(time=-1, lat=24, lon=18)).sel(time=slice("1961-01-01", "1990-12-31"))
+
+baseline_measures = hdp.measure.format_standard_measures(temp_datasets=[baseline_tas])
+ssp370_measures   = hdp.measure.format_standard_measures(temp_datasets=[ssp370_tas])
+
+percentiles = np.arange(0.9, 1.0, 0.01)
+thresholds  = hdp.threshold.compute_thresholds(baseline_measures, percentiles)
+
+definitions = [[3,1,0], [3,1,1], [4,0,0], [4,1,1], [5,0,0], [5,1,1]]
+metrics = hdp.metric.compute_group_metrics(ssp370_measures, thresholds, definitions)
+metrics.to_zarr("cesm2_ssp370_hw_metrics.zarr", mode="w", compute=True, zarr_format=2)
+
+# Re-open from disk to avoid recomputation, then build the figure deck
+metrics_disk = xr.open_zarr("cesm2_ssp370_hw_metrics.zarr")
+create_notebook(metrics_disk).save_notebook("cesm2_ssp370_hw_metrics.ipynb")
+client.shutdown()
+```
+
+---
+
+## Output schema cheat-sheet
+
+- **Formatted measure** (`xarray.Dataset`): one data var per input measure; dims `time, lat, lon`
+  (+ `member` if present); attrs include `hdp_type="measure"`, `baseline_variable`, `hdp_version`.
+- **Threshold** (`xarray.Dataset`): vars `"{measure}_threshold"`; dims `lat, lon, doy, percentile`;
+  attrs include `hdp_type="threshold"`, `baseline_variable`, `baseline_start/end_time`,
+  `baseline_calendar`, `param_percentiles`.
+- **Metric** (`xarray.Dataset`): vars `"{measure}.{threshold}.{HWF|HWN|HWD|HWA}"`; dims
+  `time, lat, lon, percentile, definition` (+ `member`); `time` is the per-year season axis;
+  attrs include `hdp_type="metric"`, `variable_naming_desc`.
+
+---
+
+## Further reading
+
+- Overview & quick start — https://hdp.readthedocs.io/en/latest/overview.html
+- Worked examples (sample + CESM2) — https://hdp.readthedocs.io/en/latest/examples.html
+- Full API reference — https://hdp.readthedocs.io/en/latest/api.html
+- Developer guide & testing — https://hdp.readthedocs.io/en/latest/dev_guide.html
+- Source modules (raw): [measure.py](https://raw.githubusercontent.com/AgentOxygen/HDP/refs/heads/main/hdp/measure.py) ·
+  [threshold.py](https://raw.githubusercontent.com/AgentOxygen/HDP/refs/heads/main/hdp/threshold.py) ·
+  [metric.py](https://raw.githubusercontent.com/AgentOxygen/HDP/refs/heads/main/hdp/metric.py) ·
+  [graphics/figure.py](https://raw.githubusercontent.com/AgentOxygen/HDP/refs/heads/main/hdp/graphics/figure.py)
+- GitHub Issues (questions/bugs) — https://github.com/AgentOxygen/HDP/issues

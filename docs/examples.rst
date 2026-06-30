@@ -10,7 +10,11 @@ First, we need a baseline temperature dataset to derive the threshold from and a
 
 .. code-block:: python
 
-    import hdp
+    import hdp.utils
+    import hdp.measure
+    import hdp.threshold
+    import hdp.metric
+    from hdp.graphics.notebook import create_notebook
 
     sample_control_temp = hdp.utils.generate_test_control_dataarray(add_noise=True)
     sample_warming_temp = hdp.utils.generate_test_warming_dataarray(add_noise=True)
@@ -26,7 +30,7 @@ Where :math:`\beta = 270` for the Northern hemisphere and :math:`\beta = 90` for
 .. math::
     y_2(t) = y_1 - 10\frac{|l|}{90}
 
-This essentially simulates a seasonally-varying temperature pattern that decreases with latititude. Optionally, a random noise filter can be applied to create variance across multiple definitions and pecentiles. 
+This essentially simulates a seasonally-varying temperature pattern that decreases with latitude. Optionally, a random noise filter can be applied to create variance across multiple definitions and percentiles. 
 
 Before we can use the data with HDP functions, we must format the measures to convert units and variable names if necessary:
 
@@ -67,7 +71,7 @@ The definition codes may feel confusing at first, but they allow the user to cap
 
     metrics_dataset = hdp.metric.compute_group_metrics(test_measures, thresholds_dataset, definitions, include_threshold=True)
 
-By setting ``include_threshold=True``, we ensure the output dataset stored in ``metrics_dataset`` contains the threshold dataset as well. This can result in very large arrays for larger datasets (particularly large ensmebles), so this is an optional parameter.
+By setting ``include_threshold=True``, we ensure the output dataset stored in ``metrics_dataset`` contains the threshold dataset as well. This can result in very large arrays for larger datasets (particularly large ensembles), so this is an optional parameter.
 
 The output is a standard ``xarray.Dataset``, so we can save as a netCDF file just as any other ``xarray.Dataset``:
 
@@ -76,7 +80,7 @@ The output is a standard ``xarray.Dataset``, so we can save as a netCDF file jus
     output_dir = "."
     metrics_dataset.to_netcdf(f"{output_dir}/sample_hw_metrics.nc", mode='w')
 
-Similary, the input datasets (control and warming) are ``xarray.DataArray`` which can be converted ``xarray.Dataset`` to save these as netCDF files for further inspection:
+Similarly, the input datasets (control and warming) are ``xarray.DataArray`` which can be converted ``xarray.Dataset`` to save these as netCDF files for further inspection:
 
 .. code-block:: python
 
@@ -113,7 +117,7 @@ The full workflow code is available in `docs/example_cmip_workflow/run_cmip_work
    * - Definitions
      - 3-1-0, 3-1-1, 4-0-0, 4-1-1, 5-0-0, 5-1-1
 
-To fully utilize the performance enhancments offered by the HDP, we must first start a `Dask cluster <https://docs.dask.org/en/stable/deploying.html>`_ to leverage parallel computation. This step is not automated because it requires system-specific configuration. If you are working on a single, local machine, a `LocalCluster <https://docs.dask.org/en/stable/deploying.html#local-machine>`_ typically works best. However, if you are working on a distributed system at a supercomputing center, use the Dask configuration reccomended by your trusted HPC specialist.
+To fully utilize the performance enhancements offered by the HDP, we must first start a `Dask cluster <https://docs.dask.org/en/stable/deploying.html>`_ to leverage parallel computation. This step is not automated because it requires system-specific configuration. If you are working on a single, local machine, a `LocalCluster <https://docs.dask.org/en/stable/deploying.html#local-machine>`_ typically works best. However, if you are working on a distributed system at a supercomputing center, use the Dask configuration recommended by your trusted HPC specialist.
 
 .. code-block:: python
 
@@ -181,7 +185,7 @@ To avoid re-computing the dataset, we can update `metrics_dataset` to use the lo
 
 .. code-block:: python
 
-    figure_notebook = create_notebook(metrics_dataset_disk)
+    figure_notebook = create_notebook(metrics_dataset)
     figure_notebook.save_notebook("cesm2_ssp370_hw_metrics.ipynb")
 
     # Good practice to shutdown the Dask cluster when done.

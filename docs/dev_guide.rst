@@ -1,7 +1,7 @@
 Developer Guide
 ===============
 
-Thank you for taking interesting in further developing the HDP! To get started, first clone the repository:
+Thank you for taking interest in further developing the HDP! To get started, first clone the repository:
 
 .. code-block:: console
 

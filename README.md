@@ -1,6 +1,7 @@
 # HDP: Heatwave Diagnostics Package
 
 [![Available on pypi](https://img.shields.io/pypi/v/HDP-python.svg)](https://pypi.org/project/HDP-python/)
+[![Run Unit Tests](https://github.com/AgentOxygen/HDP/actions/workflows/unit_tests.yml/badge.svg)](https://github.com/AgentOxygen/HDP/actions/workflows/unit_tests.yml)
 [![Docs](https://readthedocs.org/projects/hdp/badge/?version=latest)](https://hdp.readthedocs.io/en/latest/)
 ![GitHub License](https://img.shields.io/github/license/AgentOxygen/HDP)
 [![status](https://joss.theoj.org/papers/071c99a9e9f52348df4de69ccdee5133/status.svg)](https://joss.theoj.org/papers/071c99a9e9f52348df4de69ccdee5133)
@@ -13,15 +14,23 @@ The HDP offers functions that leverage Xarray, Dask, and Numba to take full adva
 
 Existing tools used to quantify heatwave metrics (such as ehfheatwaves, heatwave3, nctoolkit) were not designed to sample large sections of the heatwave parameter space. Many of these tools struggle to handle the computational burden of analyzing terabyte-scale datasets and do not offer a complete workflow for generating heatwave diagnostics from daily, gridded climate model output. The HDP expands upon this work to empower the user to conduct parameter-sampling analysis and reduce the computational burden of calculating heatwave metrics from increasingly large model output.
 
+# Installation
+
+To install the HDP, activate your preferred Python environment (conda, venv, uv, etc.) and use the Python Package Index (PyPI) `pip install` command:
+
+```bash
+pip install hdp-python
+```
+
 # Documentation
 
-To learn more about the HDP and how to use it, check out the full ReadTheDocs documentation at https://hdp.readthedocs.io/en/latest/user.html#.
+To learn more about the HDP and how to use it, check out the full ReadTheDocs documentation at https://hdp.readthedocs.io/en/latest/overview.html
 
 # Quick-Start
 
 The code block below showcases an example HDP workflow using generated sample data:
 
-```
+```python
 from hdp.graphics.notebook import create_notebook
 import hdp.utils
 import hdp.measure
@@ -65,11 +74,21 @@ sample_warming_temp.attrs["description"] = "Mock temperature dataset with warmin
 sample_warming_temp.to_netcdf(f"{output_dir}/sample_warming_temp.nc", mode='w')
 ```
 
+# LLM Support
+
+The HDP is designed to support LLM-assisted development workflows.
+
+If you are using Claude, ChatGPT, Gemini, or any other LLM service, point the coding assistant to the `llms.txt` file or drop in the following URL if you are using a web interface:
+
+[https://raw.githubusercontent.com/AgentOxygen/HDP/refs/heads/main/llms.txt](https://raw.githubusercontent.com/AgentOxygen/HDP/refs/heads/main/llms.txt)
+
+This text file serves as a entry point for LLMs to learn how to accurately use the HDP via markdown skills, isolated examples, and code snippets.
+
 # Unit Tests
 
 The testing suite can be run by cloning the repository, building the docker image, and then running the container:
 
-```
+```bash
 git clone git@github.com:AgentOxygen/HDP.git
 cd HDP
 docker build --rm -t hdp .
@@ -84,7 +103,7 @@ All tests are written using [pytest](https://docs.pytest.org/en/stable/) and are
 
 Please report any bugs, ask questions, and make suggestions through the [GitHub Issues form of this repository](https://github.com/AgentOxygen/HDP/issues).
 
-Check out the [Developer's Guide](https://hdp.readthedocs.io/en/latest/dev_guide.html) for information on how to setup a development environment and make changes to the HDP.
+See the [Contributing Guidelines](CONTRIBUTING.md) for how to set up a development environment, run the tests, and submit changes. The [Developer's Guide](https://hdp.readthedocs.io/en/latest/dev_guide.html) contains additional detail.
 
 # Acknowledgements
 
@@ -97,19 +116,22 @@ I would like to acknowledge the following people for their contributions to this
 
 # Citation
 
-If our software package helps you with your research, please consider citing it:
+If our software package helps you with your research, please consider citing it. GitHub also generates a citation from the repository's [CITATION.cff](CITATION.cff) via the **Cite this repository** button.
 
- - Cummins, C., & Persad, G. (2025). HDP: Heatwave Diagnostics Package [Software]. Available from https://github.com/AgentOxygen/HDP.
+ - Cummins, C., & Persad, G. (2026). Heatwave Diagnostics Package: Efficiently Compute Heatwave Metrics Across Parameter Spaces. Journal of Open Source Software, 11(118), 8111, https://doi.org/10.21105/joss.08111
 
-In BibTeX:
-
+```bibtex
+@article{
+    Cummins2026,
+    doi = {10.21105/joss.08111},
+    url = {https://doi.org/10.21105/joss.08111},
+    year = {2026},
+    publisher = {The Open Journal},
+    volume = {11},
+    number = {118},
+    pages = {8111},
+    author = {Cummins, Cameron and Persad, Geeta},
+    title = {Heatwave Diagnostics Package: Efficiently Compute Heatwave Metrics Across Parameter Spaces},
+    journal = {Journal of Open Source Software}
+} 
 ```
-@Manual{         cummins2025hdp,
- title         = {{HDP}: Heatwave Diagnostics Package (Software)},
- author        = {Cameron Cummins and Geeta Persad},
- year          = {2025},
- url           = {https://github.com/AgentOxygen/HDP}
-}
-```
-
-This software citation is provided while the JOSS paper remains under review. The citations above follow guidelines described in [this article](https://www.software.ac.uk/publication/how-cite-and-describe-software) by the Software Sustainability Institute.

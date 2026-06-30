@@ -1,7 +1,7 @@
 Unit Testing
 ============
 
-Unit tests are described in `hdp/tests` and rely on the `hdp.utils.generate_test_` functions to generate "mock" datasets. The same functions are described in the :ref:`Quick Start Guide <_quickstart_walkthrough>` but are called with parameters `add_noise=False` and `grid_shape=(2, 3)` for reproducibility and less computational overhead. The grid shape was chosen to mimic real datasets which almost always span multiple latitude/longitude coordinates. By setting the grid shape to two different lengths (as opposed to a square), we can better isolate bugs that originate from coordinate-handling.
+Unit tests are described in `hdp/tests` and rely on the `hdp.utils.generate_test_` functions to generate "mock" datasets. The same functions are described in the :ref:`Quick Start Guide <quickstart_walkthrough>` but are called with parameters `add_noise=False` and `grid_shape=(2, 3)` for reproducibility and less computational overhead. The grid shape was chosen to mimic real datasets which almost always span multiple latitude/longitude coordinates. By setting the grid shape to two different lengths (as opposed to a square), we can better isolate bugs that originate from coordinate-handling.
 
 Unit tests are automatically run by GitHub Actions when a commit is made to any Python file in the project. The workflow is available in `.github/workflows/unit_tests.yml`
 

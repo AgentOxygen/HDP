@@ -22,9 +22,7 @@ def test_full_data_workflow(temp_output_dir):
     percentiles = np.arange(0.9, 1, 0.01)
     
     thresholds = hdp.threshold.compute_thresholds(baseline_measures, percentiles=percentiles)
-    
-    exceedance_pattern = [1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1]
-    
+        
     test_temp = hdp.utils.generate_test_warming_dataarray(grid_shape=grid_shape).rename("temp")
     test_rh = baseline_rh
     
@@ -64,3 +62,35 @@ def test_full_data_workflow(temp_output_dir):
 
     figure_notebook = create_notebook(metrics)
     figure_notebook.save_notebook(f"{temp_output_dir}/sample_hw_summary_figures.ipynb")
+
+
+def test_include_threshold():
+    grid_shape = (2, 3)
+
+    baseline_temp = hdp.utils.generate_test_control_dataarray(grid_shape=grid_shape).rename("temp")
+    test_temp = hdp.utils.generate_test_warming_dataarray(grid_shape=grid_shape).rename("temp")
+
+    baseline_measures = hdp.measure.format_standard_measures([baseline_temp])
+    test_measures = hdp.measure.format_standard_measures([test_temp])
+
+    percentiles = np.arange(0.9, 1, 0.02)
+    thresholds = hdp.threshold.compute_thresholds(baseline_measures, percentiles=percentiles)
+
+    hw_definitions = [[3, 0, 0], [3, 1, 1]]
+
+    metrics_with = hdp.metric.compute_group_metrics(test_measures, thresholds, hw_definitions, include_threshold=True).compute()
+    metrics_without = hdp.metric.compute_group_metrics(test_measures, thresholds, hw_definitions, include_threshold=False).compute()
+    thresholds = thresholds.compute()
+
+    # The threshold variable is embedded under its own name only when include_threshold=True.
+    assert "temp_threshold" in metrics_with.data_vars
+    assert "temp_threshold" not in metrics_without.data_vars
+
+    # The metric variables are unaffected by include_threshold.
+    metric_vars = [var for var in metrics_with.data_vars if var != "temp_threshold"]
+    assert set(metric_vars) == set(metrics_without.data_vars)
+
+    # The embedded threshold matches the source threshold exactly.
+    embedded = metrics_with["temp_threshold"]
+    source = thresholds["temp_threshold"]
+    assert embedded.broadcast_like(source).equals(source.broadcast_like(embedded))

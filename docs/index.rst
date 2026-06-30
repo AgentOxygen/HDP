@@ -9,6 +9,7 @@ Contents
     overview
     install
     examples
+    interactive
     dev_guide
     testing
     api
