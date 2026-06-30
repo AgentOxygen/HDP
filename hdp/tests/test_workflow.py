@@ -64,7 +64,7 @@ def test_full_data_workflow(temp_output_dir):
     figure_notebook.save_notebook(f"{temp_output_dir}/sample_hw_summary_figures.ipynb")
 
 
-def test_include_threshold():
+def test_include_threshold(temp_output_dir):
     grid_shape = (2, 3)
 
     baseline_temp = hdp.utils.generate_test_control_dataarray(grid_shape=grid_shape).rename("temp")
@@ -94,3 +94,6 @@ def test_include_threshold():
     embedded = metrics_with["temp_threshold"]
     source = thresholds["temp_threshold"]
     assert embedded.broadcast_like(source).equals(source.broadcast_like(embedded))
+
+    figure_notebook = create_notebook(metrics_with)
+    figure_notebook.save_notebook(f"{temp_output_dir}/sample_hw_summary_figures.ipynb")
